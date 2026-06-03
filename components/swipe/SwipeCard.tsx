@@ -23,7 +23,7 @@ export const SwipeCard: React.FC<Props> = ({ user, isTop }) => (
         <Text style={styles.location}>📍 {user.location}</Text>
         {user.bio ? <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text> : null}
         <View style={styles.interests}>
-          {user.interests.slice(0, 3).map(tag => (
+          {(user.interests ?? []).slice(0, 3).map(tag => (
             <Badge key={tag} label={tag} color="rgba(255,255,255,0.25)" textColor={Theme.colors.white} size="sm" />
           ))}
         </View>
@@ -44,10 +44,9 @@ const styles = StyleSheet.create({
   topCard: { zIndex: 10 },
   image: { width: '100%', height: '100%', resizeMode: 'cover' },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    background: 'transparent',
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'transparent',
     justifyContent: 'flex-end',
-    background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
   },
   info: { padding: Theme.spacing.lg },
   nameRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },

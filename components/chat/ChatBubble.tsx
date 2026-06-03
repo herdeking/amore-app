@@ -13,7 +13,7 @@ export const ChatBubble: React.FC<Props> = ({ message, isOwn }) => (
     <View style={[styles.bubble, isOwn ? styles.own : styles.other]}>
       <Text style={[styles.text, isOwn && styles.textOwn]}>{message.text}</Text>
       <Text style={[styles.time, isOwn && styles.timeOwn]}>
-        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        {new Date(message.createdAt ?? Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </View>
   </View>

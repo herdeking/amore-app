@@ -26,7 +26,7 @@ export const createMatch = async (userId: string, targetId: string): Promise<Mat
   const match: Match = {
     id: matchId,
     users: [userId, targetId],
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
   };
   await setDoc(doc(db, 'matches', matchId), { ...match, createdAt: serverTimestamp() });
   return match;
