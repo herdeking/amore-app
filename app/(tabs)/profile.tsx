@@ -1,54 +1,39 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ProfileForm } from '../../components/profile/ProfileForm';
-import { ProfilePhoto } from '../../components/profile/ProfilePhoto';
+import ProfileForm from '../../components/profile/ProfileForm';
 import { useAuthStore } from '../../store/authStore';
-import { updateProfile } from '../../services/profiles';
 import { logOut } from '../../services/auth';
-import { Button } from '../../components/ui/Button';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
 
-export default function ProfileScreen() {
-  const { user, firebaseUid, setUser } = useAuthStore();
+export default function Profile() {
   const router = useRouter();
+  const { user } = useAuthStore();
 
-  const handleSave = async (data: any) => {
-    if (!firebaseUid) return;
+  const handleLogout = async () => {
     try {
-      await updateProfile(firebaseUid, data);
-      setUser({ ...user, ...data });
-      Alert.alert('Saved!', 'Profile updated.');
+      await logOut();
+      router.replace('/(auth)/login');
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }
   };
 
-  const handleLogout = async () => {
-    await logOut();
-    router.replace('/(auth)/login');
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Profile</Text>
-      <ProfilePhoto photos={user?.photos ?? []} onChange={async (photos) => {}} />
-      <ProfileForm initial={user ?? undefined} onSave={handleSave} />
-      <Button label="Log Out" variant="outline" size="md" onPress={handleLogout} />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.logout}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
+      <ProfileForm user={user} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    padding: Theme.spacing.lg,
-    gap: Theme.spacing.md,
-  },
-  header: {
-    fontSize: Theme.fontSize.xl,
-    fontWeight: Theme.fontWeight.bold,
-    color: Colors.text,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#FF4B6E' },
+  logout: { color: '#999', fontSize: 14 },
 });
