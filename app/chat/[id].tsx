@@ -1,30 +1,28 @@
-import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import MessageList from '../../components/chat/MessageList';
+import ChatInput from '../../components/chat/ChatInput';
 import { useChat } from '../../hooks/useChat';
-import { MessageList } from '../../components/chat/MessageList';
-import { ChatInput } from '../../components/chat/ChatInput';
-import { useAuthStore } from '../../store/authStore';
-import { Colors } from '../../constants/colors';
 
-export default function ChatScreen() {
+export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
-  const { user } = useAuthStore();
-  const { messages, send } = useChat(id);
+  const { messages, sendMessage } = useChat(id);
 
   useEffect(() => {
     navigation.setOptions({ title: 'Chat' });
   }, []);
 
   return (
-    <View style={styles.container}>
-      <MessageList matchId={id} />
-      <ChatInput onSend={(text) => send(text)} />
-    </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <MessageList messages={messages} matchId={id} />
+      <ChatInput onSend={(text) => sendMessage(text)} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#fff' },
 });
