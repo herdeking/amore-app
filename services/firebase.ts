@@ -5,13 +5,13 @@ import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
+  apiKey: "AIzaSyDMEzHwG5NCx-4Sr-rCnFAGrFlWLrLsmOc",
+  authDomain: "amore-dating-9b956.firebaseapp.com",
+  projectId: "amore-dating-9b956",
+  storageBucket: "amore-dating-9b956.firebasestorage.app",
+  messagingSenderId: "525255599408",
+  appId: "1:525255599408:web:504a867157ddb2879454f5",
+  databaseURL: "https://amore-dating-9b956-default-rtdb.firebaseio.com",
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
