@@ -3,7 +3,7 @@ import { onAuthChange, getProfile } from '../services/auth';
 import { useAuthStore } from '../store/authStore';
 
 export const useAuth = () => {
-  const { setUser, setFirebaseUid } = useAuthStore();
+  const { setUser, setFirebaseUid, setIsLoading } = useAuthStore();
 
   useEffect(() => {
     const unsub = onAuthChange(async (firebaseUser: any) => {
@@ -15,8 +15,8 @@ export const useAuth = () => {
         setUser(null);
         setFirebaseUid(null);
       }
+      setIsLoading(false);
     });
     return () => unsub();
   }, []);
 };
-
