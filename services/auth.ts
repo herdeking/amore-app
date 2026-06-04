@@ -42,3 +42,8 @@ export const getProfile = async (uid: string) => {
 export const onAuthChange = (callback: (user: any) => void) => {
   return onAuthStateChanged(auth, callback);
 };
+
+import { sendPasswordResetEmail } from 'firebase/auth';
+export const resetPassword = async (email: string) => {
+  await sendPasswordResetEmail(auth, email);
+};
