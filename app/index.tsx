@@ -5,16 +5,18 @@ import { useAuthStore } from '../store/authStore';
 
 export default function Index() {
   const router = useRouter();
-  const { user, isLoading } = useAuthStore();
+  const { user, firebaseUid, isLoading } = useAuthStore();
 
   useEffect(() => {
     if (isLoading) return;
-    if (user) {
-      router.replace('/(tabs)/swipe');
-    } else {
+    if (!firebaseUid) {
       router.replace('/(auth)/login');
+    } else if (!user) {
+      router.replace('/onboarding');
+    } else {
+      router.replace('/(tabs)/swipe');
     }
-  }, [user, isLoading]);
+  }, [user, firebaseUid, isLoading]);
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

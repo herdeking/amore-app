@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Image, Alert
+  StyleSheet, ScrollView, Image, Alert, ActivityIndicator
 } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db, storage } from '../services/firebase';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
 
@@ -16,6 +19,7 @@ export default function Onboarding() {
   const [dob, setDob] = useState('');
   const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -29,19 +33,55 @@ export default function Onboarding() {
     }
   };
 
+  const uploadPhoto = async (uri: string, index: number): Promise<string> => {
+    const uid = auth.currentUser?.uid;
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const photoRef = ref(storage, `users/${uid}/photos/${index}`);
+    await uploadBytes(photoRef, blob);
+    return await getDownloadURL(photoRef);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Not logged in');
+
+      const uploadedPhotos = await Promise.all(
+        photos.map((uri, i) => uploadPhoto(uri, i))
+      );
+
+      await setDoc(doc(db, 'users', uid), {
+        id: uid,
+        name,
+        dob,
+        bio,
+        photos: uploadedPhotos,
+        createdAt: new Date().toISOString(),
+        onboardingComplete: true,
+      });
+
+      router.replace('/(tabs)/swipe');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const next = () => {
     if (step === 0 && !name.trim()) return Alert.alert('Enter your name');
     if (step === 1 && !dob.trim()) return Alert.alert('Enter your birthday');
     if (step === 3 && photos.length === 0) return Alert.alert('Add at least one photo');
     if (step < steps.length - 1) setStep(step + 1);
-    else router.replace('/(tabs)/swipe');
+    else saveProfile();
   };
 
   const back = () => { if (step > 0) setStep(step - 1); };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Progress bar */}
       <View style={styles.progressRow}>
         {steps.map((s, i) => (
           <View key={s} style={[styles.progressDot, i <= step && styles.progressActive]} />
@@ -52,7 +92,7 @@ export default function Onboarding() {
 
       {step === 0 && (
         <>
-          <Text style={styles.subtitle}>What's your name?</Text>
+          <Text style={styles.subtitle}>What\'s your name?</Text>
           <TextInput
             style={styles.input}
             placeholder="First name"
@@ -65,7 +105,7 @@ export default function Onboarding() {
 
       {step === 1 && (
         <>
-          <Text style={styles.subtitle}>When's your birthday?</Text>
+          <Text style={styles.subtitle}>When\'s your birthday?</Text>
           <TextInput
             style={styles.input}
             placeholder="DD/MM/YYYY"
@@ -111,14 +151,17 @@ export default function Onboarding() {
 
       <View style={styles.buttons}>
         {step > 0 && (
-          <TouchableOpacity style={styles.backBtn} onPress={back}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} disabled={saving}>
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.nextBtn} onPress={next}>
-          <Text style={styles.nextText}>
-            {step === steps.length - 1 ? "Let's Go 🔥" : 'Next'}
-          </Text>
+        <TouchableOpacity style={styles.nextBtn} onPress={next} disabled={saving}>
+          {saving
+            ? <ActivityIndicator color={Colors.white} />
+            : <Text style={styles.nextText}>
+                {step === steps.length - 1 ? "Let\'s Go 🔥" : 'Next'}
+              </Text>
+          }
         </TouchableOpacity>
       </View>
     </ScrollView>
