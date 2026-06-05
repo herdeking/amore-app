@@ -2,12 +2,26 @@ export interface User {
   id: string;
   name: string;
   age?: number;
+  dob?: string;
   bio?: string;
   photos: string[];
-  interests?: string[];
   location?: string;
   gender?: string;
   lookingFor?: string;
+  interests?: string[];
+  height?: string;
+  weight?: string;
+  physique?: string;
+  education?: string;
+  financial?: string;
+  dwelling?: string;
+  car?: string;
+  smoking?: string;
+  alcohol?: string;
+  children?: string;
+  sociability?: string;
+  purpose?: string;
+  isPremium?: boolean;
 }
 
 export interface Match {
