@@ -17,7 +17,7 @@ export default function Chat() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <MessageList messages={messages} matchId={id} />
+      <MessageList matchId={id} />
       <ChatInput onSend={(text: string) => send(text)} />
     </SafeAreaView>
   );
