@@ -35,9 +35,15 @@ export default function Onboarding() {
 
   const uploadPhoto = async (uri: string, index: number): Promise<string> => {
     const uid = auth.currentUser?.uid;
-    const response = await fetch(uri);
-    const blob = await response.blob();
     const photoRef = ref(storage, `users/${uid}/photos/${index}`);
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = () => resolve(xhr.response);
+      xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.responseType = 'blob';
+      xhr.open('GET', uri, true);
+      xhr.send(null);
+    });
     await uploadBytes(photoRef, blob);
     return await getDownloadURL(photoRef);
   };

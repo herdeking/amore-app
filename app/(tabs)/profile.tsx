@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -41,9 +42,17 @@ export default function Profile() {
       setSaving(true);
       try {
         const uri = result.assets[0].uri;
-        const response = await fetch(uri);
-        const blob = await response.blob();
         const photoRef = ref(storage, `users/${user.id}/photos/0`);
+        const uploadUri = uri;
+        const response = await fetch(uploadUri);
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => resolve(xhr.response);
+          xhr.onerror = () => reject(new Error('Upload failed'));
+          xhr.responseType = 'blob';
+          xhr.open('GET', uploadUri, true);
+          xhr.send(null);
+        });
         await uploadBytes(photoRef, blob);
         const url = await getDownloadURL(photoRef);
         const newPhotos = [url, ...(user.photos ?? []).slice(1)];

@@ -1,28 +1,206 @@
-import { View, StyleSheet } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
-import { useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  FlatList, Image, KeyboardAvoidingView, Platform, Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MessageList } from '../../components/chat/MessageList';
-import { ChatInput } from '../../components/chat/ChatInput';
-import { useChat } from '../../hooks/useChat';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAuthStore } from '../../store/authStore';
+import { Colors } from '../../constants/colors';
+import { Theme } from '../../constants/theme';
 
-export default function Chat() {
+const QUICK_REPLIES = ['Get to know each other?', 'Hello, my dear 👋', 'Is it convenient to talk?', 'You look amazing! 😍'];
+
+const DEMO_MESSAGES = [
+  { id: '1', senderId: 'other', text: "I've been feeling lazy and sleepy lately 💤", createdAt: new Date().toISOString() },
+  { id: '2', senderId: 'other', text: 'I just want to lie in bed for a while, want to lie here by my side?', createdAt: new Date().toISOString() },
+];
+
+export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const navigation = useNavigation();
-  const { messages, send } = useChat(id);
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [messages, setMessages] = useState(DEMO_MESSAGES);
+  const [text, setText] = useState('');
+  const flatListRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    navigation.setOptions({ title: 'Chat' });
-  }, []);
+  const matchName = 'Sonia';
+  const matchPhoto = 'https://randomuser.me/api/portraits/women/1.jpg';
+  const isOnline = true;
+
+  const send = () => {
+    if (!text.trim()) return;
+    const msg = {
+      id: Date.now().toString(),
+      senderId: user?.id ?? 'me',
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, msg]);
+    setText('');
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
+  const sendQuick = (reply: string) => {
+    const msg = {
+      id: Date.now().toString(),
+      senderId: user?.id ?? 'me',
+      text: reply,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, msg]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
+  const handleCall = (type: 'voice' | 'video') => {
+    Alert.alert(
+      type === 'video' ? '📹 Video Call' : '📞 Voice Call',
+      'Free users get 10 seconds. Upgrade to VIP for unlimited calls!',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Call (10s free)', onPress: () => Alert.alert('Calling...', 'Your 10 second free call has started!') },
+        { text: '👑 Become VIP', style: 'default', onPress: () => Alert.alert('VIP', 'VIP feature coming soon!') },
+      ]
+    );
+  };
+
+  const isMine = (senderId: string) => senderId === (user?.id ?? 'me');
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <MessageList matchId={id} />
-      <ChatInput onSend={(text: string) => send(text)} />
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.backIcon}>‹</Text>
+        </TouchableOpacity>
+        <Image source={{ uri: matchPhoto }} style={styles.headerAvatar} />
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerName}>{matchName}</Text>
+          <Text style={[styles.headerStatus, isOnline && styles.busy]}>
+            {isOnline ? '● Busy' : '● Offline'}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.followBtn}>
+          <Text style={styles.followText}>Follow</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.moreBtn}>
+          <Text style={styles.moreIcon}>⋮</Text>
+        </TouchableOpacity>
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={90}
+      >
+        {/* Messages */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={m => m.id}
+          contentContainerStyle={styles.messageList}
+          renderItem={({ item }) => (
+            <View style={[styles.msgRow, isMine(item.senderId) && styles.msgRowMine]}>
+              {!isMine(item.senderId) && (
+                <Image source={{ uri: matchPhoto }} style={styles.msgAvatar} />
+              )}
+              <View style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}>
+                <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
+                  {item.text}
+                </Text>
+              </View>
+              {isMine(item.senderId) && (
+                <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />
+              )}
+            </View>
+          )}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        />
+
+        {/* Video call button */}
+        <TouchableOpacity style={styles.videoCallBtn} onPress={() => handleCall('video')}>
+          <Text style={styles.videoCallIcon}>📞</Text>
+          <Text style={styles.videoCallText}>Video call</Text>
+        </TouchableOpacity>
+
+        {/* Quick replies */}
+        <FlatList
+          horizontal
+          data={QUICK_REPLIES}
+          keyExtractor={r => r}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickReplies}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.quickReply} onPress={() => sendQuick(item)}>
+              <Text style={styles.quickReplyText}>{item}</Text>
+            </TouchableOpacity>
+          )}
+        />
+
+        {/* Input */}
+        <View style={styles.inputRow}>
+          <TouchableOpacity style={styles.inputIcon}>
+            <Text>🎁</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={setText}
+            placeholder="Send a message"
+            placeholderTextColor={Colors.textLight}
+            multiline
+          />
+          <TouchableOpacity style={styles.inputIcon}>
+            <Text>🤖</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.inputIcon}>
+            <Text>📷</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sendBtn, text.trim() && styles.sendBtnActive]}
+            onPress={send}
+          >
+            <Text style={styles.sendIcon}>➤</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8F8F8' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 8 },
+  backBtn: { padding: 4 },
+  backIcon: { fontSize: 32, color: Colors.text, lineHeight: 32 },
+  headerAvatar: { width: 40, height: 40, borderRadius: 20 },
+  headerInfo: { flex: 1 },
+  headerName: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  headerStatus: { fontSize: 12, color: Colors.textLight },
+  busy: { color: '#FF4B4B' },
+  followBtn: { borderWidth: 1, borderColor: Colors.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 },
+  followText: { fontSize: 13, color: Colors.text },
+  moreBtn: { padding: 4 },
+  moreIcon: { fontSize: 20, color: Colors.text },
+  messageList: { padding: 16, gap: 12 },
+  msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
+  msgRowMine: { flexDirection: 'row-reverse' },
+  msgAvatar: { width: 32, height: 32, borderRadius: 16 },
+  bubble: { maxWidth: '70%', padding: 12, borderRadius: 18 },
+  bubbleOther: { backgroundColor: Colors.white, borderBottomLeftRadius: 4 },
+  bubbleMine: { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
+  bubbleText: { fontSize: 15, color: Colors.text, lineHeight: 22 },
+  bubbleTextMine: { color: Colors.white },
+  videoCallBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFD700', marginHorizontal: 80, marginBottom: 8, paddingVertical: 12, borderRadius: 30, gap: 8 },
+  videoCallIcon: { fontSize: 18 },
+  videoCallText: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.white },
+  quickReplies: { paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
+  quickReply: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  quickReplyText: { fontSize: 13, color: Colors.text },
+  inputRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
+  inputIcon: { padding: 4 },
+  input: { flex: 1, backgroundColor: '#F0F0F0', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 15, color: Colors.text, maxHeight: 100 },
+  sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  sendBtnActive: { backgroundColor: Colors.primary },
+  sendIcon: { color: Colors.white, fontSize: 16 },
 });
