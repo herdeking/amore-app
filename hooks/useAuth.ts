@@ -10,7 +10,7 @@ export const useAuth = () => {
       if (firebaseUser) {
         setFirebaseUid(firebaseUser.uid);
         const profile = await getProfile(firebaseUser.uid);
-        setUser(profile);
+        setUser(profile as any);
       } else {
         setUser(null);
         setFirebaseUid(null);

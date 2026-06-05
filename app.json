@@ -18,13 +18,12 @@
     "plugins": [
       "expo-router"
     ],
+    "newArchEnabled": false,
+    "owner": "amorec",
     "extra": {
-      "router": {},
       "eas": {
-        "projectId": "12dc867b-75ff-4c28-a815-66ba87d41a80"
+        "projectId": "a5dd444f-6992-4021-99a0-b0af870b64ef"
       }
-    },
-    "owner": "amoredating",
-    "newArchEnabled": false
+    }
   }
 }
