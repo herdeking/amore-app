@@ -1,15 +1,13 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MatchList from '../../components/matches/MatchList';
-import { useMatches } from '../../hooks/useMatches';
 
 export default function Matches() {
-  const { matches } = useMatches();
-
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Matches 💕</Text>
-      <MatchList matches={matches} userMap={{}} />
+      <View style={styles.center}>
+        <Text style={styles.text}>No matches yet</Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -17,4 +15,6 @@ export default function Matches() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#FF4B6E', textAlign: 'center', paddingVertical: 12 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  text: { color: '#999', fontSize: 16 },
 });
