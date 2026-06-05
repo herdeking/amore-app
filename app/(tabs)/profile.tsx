@@ -5,16 +5,10 @@ import { logOut } from '../../services/auth';
 
 export default function Profile() {
   const router = useRouter();
-
   const handleLogout = async () => {
-    try {
-      await logOut();
-      router.replace('/(auth)/login');
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
-    }
+    try { await logOut(); router.replace('/(auth)/login'); }
+    catch (e: any) { Alert.alert('Error', e.message); }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -24,7 +18,7 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
       <View style={styles.center}>
-        <Text style={styles.text}>Profile settings coming soon</Text>
+        <Text style={styles.text}>Profile coming soon</Text>
       </View>
     </SafeAreaView>
   );
