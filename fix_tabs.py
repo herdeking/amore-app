@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+layout = """import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
@@ -17,3 +17,7 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+"""
+with open('app/(tabs)/_layout.tsx', 'w') as f:
+    f.write(layout)
+print("Done layout!")

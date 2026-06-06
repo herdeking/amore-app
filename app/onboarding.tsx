@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToCloudinary } from '../services/cloudinary';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db, storage } from '../services/firebase';
+import { auth, db } from '../services/firebase';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
 
@@ -34,18 +34,7 @@ export default function Onboarding() {
   };
 
   const uploadPhoto = async (uri: string, index: number): Promise<string> => {
-    const uid = auth.currentUser?.uid;
-    const photoRef = ref(storage, `users/${uid}/photos/${index}`);
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response);
-      xhr.onerror = () => reject(new Error('Upload failed'));
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
-    });
-    await uploadBytes(photoRef, blob);
-    return await getDownloadURL(photoRef);
+    return await uploadToCloudinary(uri);
   };
 
   const saveProfile = async () => {
