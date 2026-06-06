@@ -4,11 +4,7 @@ import {
   TextInput, Alert, Dimensions, Image, ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-
-WebBrowser.maybeCompleteAuthSession();
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 
 const { width, height } = Dimensions.get('window');
@@ -31,24 +27,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'main' | 'login' | 'register'>('main');
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-  });
-
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await promptAsync();
-      if (result?.type === 'success') {
-        const { id_token } = result.params;
-        const credential = GoogleAuthProvider.credential(id_token);
-        await signInWithCredential(auth, credential);
-        router.replace('/');
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
-    }
-  };
 
   const handleLogin = async () => {
     if (!email || !password) return Alert.alert('Error', 'Fill in all fields');
@@ -148,9 +126,9 @@ export default function Login() {
 
         {/* Buttons */}
         <View style={styles.buttons}>
-          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
+          <TouchableOpacity style={styles.googleBtn} onPress={() => setMode('login')}>
             <Text style={styles.googleIcon}>G</Text>
-            <Text style={styles.googleText}>Login with Email</Text>
+            <Text style={styles.googleText}>Sign In with Email</Text>
             <View style={styles.lastLogin}>
               <Text style={styles.lastLoginText}>Last login</Text>
             </View>
@@ -158,12 +136,12 @@ export default function Login() {
 
           <TouchableOpacity style={styles.guestBtn} onPress={handleGuest}>
             <Text style={styles.guestIcon}>👤</Text>
-            <Text style={styles.guestText}>Guest login</Text>
+            <Text style={styles.guestText}>Continue as Guest</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.phoneBtn} onPress={() => setMode('register')}>
             <Text style={styles.phoneIcon}>📱</Text>
-            <Text style={styles.phoneText}>Create new account</Text>
+            <Text style={styles.phoneText}>Create Account with Email</Text>
           </TouchableOpacity>
 
           <Text style={styles.terms}>
