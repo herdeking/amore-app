@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSwipe } from '../../hooks/useSwipe';
+import { useLocation } from '../../hooks/useLocation';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import { User } from '../../types';
@@ -14,6 +15,7 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 export default function SwipeScreen() {
   const { profiles, swipe, matched, matchedUser, dismissMatch } = useSwipe();
+  useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
 
