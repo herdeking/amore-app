@@ -10,40 +10,39 @@ import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import { User } from '../../types';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
+const { width: SW, height: SH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SW * 0.3;
 
 export default function SwipeScreen() {
   const { profiles, swipe, matched, matchedUser, dismissMatch } = useSwipe();
   useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
 
   const rotate = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+    inputRange: [-SW, 0, SW],
     outputRange: ['-15deg', '0deg', '15deg'],
   });
 
   const likeOpacity = position.x.interpolate({
-    inputRange: [0, SCREEN_WIDTH * 0.3],
+    inputRange: [0, SW * 0.3],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
   const passOpacity = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH * 0.3, 0],
+    inputRange: [-SW * 0.3, 0],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, gesture) => {
-      position.setValue({ x: gesture.dx, y: gesture.dy });
-    },
-    onPanResponderRelease: (_, gesture) => {
-      if (gesture.dx > SWIPE_THRESHOLD) handleSwipe('like');
-      else if (gesture.dx < -SWIPE_THRESHOLD) handleSwipe('pass');
+    onPanResponderMove: (_, g) => position.setValue({ x: g.dx, y: g.dy }),
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > SWIPE_THRESHOLD) handleSwipe('like');
+      else if (g.dx < -SWIPE_THRESHOLD) handleSwipe('pass');
       else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     },
   });
@@ -51,28 +50,25 @@ export default function SwipeScreen() {
   const handleSwipe = (action: 'like' | 'pass' | 'superlike') => {
     const target = profiles[currentIndex];
     if (!target) return;
-    const x = action === 'like' || action === 'superlike' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5;
-    Animated.timing(position, {
-      toValue: { x, y: 0 },
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => {
+    const x = action === 'pass' ? -SW * 1.5 : SW * 1.5;
+    Animated.timing(position, { toValue: { x, y: 0 }, duration: 300, useNativeDriver: false }).start(() => {
       swipe(target.id, action);
       setCurrentIndex(i => i + 1);
+      setPhotoIndex(0);
       position.setValue({ x: 0, y: 0 });
     });
   };
 
-  const currentUser: User | undefined = profiles[currentIndex];
+  const current: User | undefined = profiles[currentIndex];
+  const next: User | undefined = profiles[currentIndex + 1];
 
   if (!profiles.length) {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.logo}>Amore 💕</Text>
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🌟</Text>
-          <Text style={styles.emptyTitle}>No more profiles</Text>
-          <Text style={styles.emptyText}>Check back later for more matches!</Text>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.emptyText}>Loading profiles...</Text>
         </View>
       </SafeAreaView>
     );
@@ -84,8 +80,11 @@ export default function SwipeScreen() {
         <Text style={styles.logo}>Amore 💕</Text>
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>💫</Text>
-          <Text style={styles.emptyTitle}>You\'ve seen everyone!</Text>
+          <Text style={styles.emptyTitle}>You have seen everyone!</Text>
           <Text style={styles.emptyText}>Come back later for more</Text>
+          <TouchableOpacity style={styles.resetBtn} onPress={() => setCurrentIndex(0)}>
+            <Text style={styles.resetText}>Start Over</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -93,27 +92,41 @@ export default function SwipeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.logo}>Amore 💕</Text>
+      <View style={styles.header}>
+        <Text style={styles.logo}>Amore 💕</Text>
+        <TouchableOpacity style={styles.filterBtn}>
+          <Text style={styles.filterIcon}>⚡</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.cardContainer}>
-        {/* Next card underneath */}
-        {profiles[currentIndex + 1] && (
+        {/* Next card */}
+        {next && (
           <View style={[styles.card, styles.nextCard]}>
-            <Image
-              source={{ uri: profiles[currentIndex + 1].photos?.[0] }}
-              style={styles.cardImage}
-            />
+            <Image source={{ uri: next.photos?.[0] }} style={styles.cardImage} />
           </View>
         )}
 
         {/* Current card */}
         <Animated.View
-          style={[styles.card, {
-            transform: [...position.getTranslateTransform(), { rotate }]
-          }]}
+          style={[styles.card, { transform: [...position.getTranslateTransform(), { rotate }] }]}
           {...panResponder.panHandlers}
         >
-          <Image source={{ uri: currentUser?.photos?.[0] }} style={styles.cardImage} />
+          <Image
+            source={{ uri: current?.photos?.[photoIndex] ?? current?.photos?.[0] }}
+            style={styles.cardImage}
+          />
+
+          {/* Photo dots */}
+          {(current?.photos?.length ?? 0) > 1 && (
+            <View style={styles.photoDots}>
+              {current?.photos?.map((_, i) => (
+                <TouchableOpacity key={i} onPress={() => setPhotoIndex(i)}>
+                  <View style={[styles.dot, i === photoIndex && styles.dotActive]} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           {/* Like stamp */}
           <Animated.View style={[styles.stamp, styles.likeStamp, { opacity: likeOpacity }]}>
@@ -122,13 +135,30 @@ export default function SwipeScreen() {
 
           {/* Pass stamp */}
           <Animated.View style={[styles.stamp, styles.passStamp, { opacity: passOpacity }]}>
-            <Text style={styles.stampText}>PASS ❌</Text>
+            <Text style={styles.stampText}>NOPE ❌</Text>
           </Animated.View>
 
+          {/* Info */}
           <View style={styles.cardInfo}>
-            <Text style={styles.cardName}>{currentUser?.name}, {currentUser?.age}</Text>
-            {currentUser?.bio && <Text style={styles.cardBio} numberOfLines={2}>{currentUser.bio}</Text>}
-            {currentUser?.location && <Text style={styles.cardLocation}>📍 {currentUser.location}</Text>}
+            <View style={styles.cardNameRow}>
+              <Text style={styles.cardName}>{current?.name}, {current?.age}</Text>
+              <View style={styles.onlineDot} />
+            </View>
+            {current?.location && (
+              <Text style={styles.cardLocation}>📍 {current.location}</Text>
+            )}
+            {current?.bio && (
+              <Text style={styles.cardBio} numberOfLines={2}>{current.bio}</Text>
+            )}
+            {(current?.interests?.length ?? 0) > 0 && (
+              <View style={styles.tags}>
+                {(current?.interests ?? []).slice(0, 3).map(tag => (
+                  <View key={tag} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </Animated.View>
       </View>
@@ -149,11 +179,14 @@ export default function SwipeScreen() {
       {/* Match modal */}
       {matched && matchedUser && (
         <View style={styles.matchModal}>
-          <Text style={styles.matchTitle}>It\'s a Match! 🎉</Text>
+          <Text style={styles.matchTitle}>Its a Match! 🎉</Text>
           <Text style={styles.matchSub}>You and {matchedUser.name} liked each other</Text>
           <Image source={{ uri: matchedUser.photos?.[0] }} style={styles.matchPhoto} />
-          <TouchableOpacity style={styles.matchBtn} onPress={dismissMatch}>
-            <Text style={styles.matchBtnText}>Keep Swiping</Text>
+          <TouchableOpacity style={styles.chatBtn} onPress={dismissMatch}>
+            <Text style={styles.chatBtnText}>💬 Send Message</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keepBtn} onPress={dismissMatch}>
+            <Text style={styles.keepBtnText}>Keep Swiping</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -162,34 +195,49 @@ export default function SwipeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  logo: { fontSize: 24, fontWeight: Theme.fontWeight.bold, color: Colors.primary, textAlign: 'center', paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: '#f8f8f8' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8 },
+  logo: { fontSize: 22, fontWeight: Theme.fontWeight.bold, color: Colors.primary },
+  filterBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2 },
+  filterIcon: { fontSize: 18 },
   cardContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  card: { position: 'absolute', width: SCREEN_WIDTH - 32, height: SCREEN_HEIGHT * 0.6, borderRadius: 16, overflow: 'hidden', backgroundColor: Colors.surface, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5 },
+  card: { position: 'absolute', width: SW - 32, height: SH * 0.62, borderRadius: 20, overflow: 'hidden', backgroundColor: Colors.surface, elevation: 5 },
   nextCard: { transform: [{ scale: 0.95 }], top: 10 },
   cardImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  cardInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'rgba(0,0,0,0.5)' },
-  cardName: { fontSize: Theme.fontSize.xl, fontWeight: Theme.fontWeight.bold, color: Colors.white },
-  cardBio: { fontSize: Theme.fontSize.sm, color: 'rgba(255,255,255,0.9)', marginTop: 4 },
-  cardLocation: { fontSize: Theme.fontSize.sm, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  photoDots: { position: 'absolute', top: 12, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 4 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
+  dotActive: { backgroundColor: Colors.white, width: 20 },
   stamp: { position: 'absolute', top: 40, padding: 8, borderWidth: 3, borderRadius: 8 },
   likeStamp: { right: 20, borderColor: Colors.like, transform: [{ rotate: '15deg' }] },
   passStamp: { left: 20, borderColor: Colors.pass, transform: [{ rotate: '-15deg' }] },
-  stampText: { fontSize: 24, fontWeight: Theme.fontWeight.bold },
-  actions: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 20 },
-  actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 3 },
-  passBtn: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.pass },
-  superBtn: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.superlike },
-  likeBtn: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.like },
-  actionIcon: { fontSize: 24 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: Theme.fontSize.xl, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 8 },
-  emptyText: { fontSize: Theme.fontSize.md, color: Colors.textLight, textAlign: 'center' },
-  matchModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,75,110,0.95)', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  matchTitle: { fontSize: Theme.fontSize.title, fontWeight: Theme.fontWeight.bold, color: Colors.white, marginBottom: 8 },
-  matchSub: { fontSize: Theme.fontSize.md, color: 'rgba(255,255,255,0.9)', marginBottom: 24, textAlign: 'center' },
+  stampText: { fontSize: 22, fontWeight: Theme.fontWeight.bold, color: Colors.white },
+  cardInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'rgba(0,0,0,0.45)' },
+  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  cardName: { fontSize: 22, fontWeight: Theme.fontWeight.bold, color: Colors.white },
+  onlineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4CAF50' },
+  cardLocation: { fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
+  cardBio: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 8 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  tag: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  tagText: { color: Colors.white, fontSize: 12 },
+  actions: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 16 },
+  actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', elevation: 3, backgroundColor: Colors.white },
+  passBtn: { borderWidth: 2, borderColor: '#FF6B6B' },
+  superBtn: { borderWidth: 2, borderColor: '#FFD700' },
+  likeBtn: { borderWidth: 2, borderColor: '#4CAF50' },
+  actionIcon: { fontSize: 26 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  emptyIcon: { fontSize: 64 },
+  emptyTitle: { fontSize: 20, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  emptyText: { fontSize: 15, color: Colors.textLight },
+  resetBtn: { backgroundColor: Colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, marginTop: 8 },
+  resetText: { color: Colors.white, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
+  matchModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,75,110,0.96)', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  matchTitle: { fontSize: 32, fontWeight: Theme.fontWeight.bold, color: Colors.white, marginBottom: 8 },
+  matchSub: { fontSize: 16, color: 'rgba(255,255,255,0.9)', marginBottom: 24, textAlign: 'center' },
   matchPhoto: { width: 160, height: 160, borderRadius: 80, borderWidth: 4, borderColor: Colors.white, marginBottom: 24 },
-  matchBtn: { backgroundColor: Colors.white, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 30 },
-  matchBtnText: { color: Colors.primary, fontWeight: Theme.fontWeight.bold, fontSize: Theme.fontSize.md },
+  chatBtn: { backgroundColor: Colors.white, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 30, marginBottom: 12 },
+  chatBtnText: { color: Colors.primary, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
+  keepBtn: { paddingVertical: 10 },
+  keepBtnText: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },
 });

@@ -22,6 +22,9 @@ export interface User {
   sociability?: string;
   purpose?: string;
   isPremium?: boolean;
+  diamonds?: number;
+  followingCount?: number;
+  followersCount?: number;
 }
 
 export interface Match {

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
-  ScrollView, Image, TextInput, ActivityIndicator
+  ScrollView, Image, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../../services/cloudinary';
@@ -15,13 +14,26 @@ import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 
+const OPTIONS: Record<string, string[]> = {
+  gender: ['Male', 'Female', 'Other'],
+  purpose: ['Relationship', 'Friendship', 'Casual', 'Marriage'],
+  children: ['No children', 'Have children', 'Want children', 'Do not want'],
+  smoking: ['Never', 'Occasionally', 'Regularly'],
+  alcohol: ['Never', 'Occasionally', 'Regularly'],
+  physique: ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus size'],
+  education: ['High school', 'College', 'Bachelor', 'Master', 'PhD'],
+  financial: ['Modest', 'Average', 'Comfortable', 'Wealthy'],
+  dwelling: ['Apartment', 'House', 'With parents', 'Other'],
+  car: ['No car', 'Have a car'],
+  sociability: ['Introvert', 'Extrovert', 'Ambivert'],
+  lookingFor: ['Man', 'Woman', 'Both'],
+};
+
 export default function Profile() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.name ?? '');
-  const [bio, setBio] = useState(user?.bio ?? '');
   const [saving, setSaving] = useState(false);
+  const [editField, setEditField] = useState<string | null>(null);
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure?', [
@@ -54,158 +66,233 @@ export default function Profile() {
     }
   };
 
-  const saveProfile = async () => {
+  const updateField = async (field: string, value: string) => {
     if (!user) return;
-    setSaving(true);
     try {
-      await updateDoc(doc(db, 'users', user.id), { name, bio });
-      setUser({ ...user, name, bio });
-      setEditing(false);
+      await updateDoc(doc(db, 'users', user.id), { [field]: value });
+      setUser({ ...user, [field]: value } as any);
+      setEditField(null);
     } catch (e: any) {
       Alert.alert('Error', e.message);
-    } finally {
-      setSaving(false);
     }
   };
 
+  const Field = ({ label, field, value }: { label: string; field: string; value?: string }) => (
+    <View style={styles.field}>
+      <View style={styles.fieldLeft}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <Text style={[styles.fieldValue, !value && styles.incomplete]}>
+          {value ?? 'Incomplete'}
+        </Text>
+      </View>
+      <TouchableOpacity onPress={() => setEditField(field)}>
+        <Text style={styles.editLink}>Edit</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logout}>Log Out</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Photo */}
-        <TouchableOpacity style={styles.photoContainer} onPress={pickPhoto}>
-          {user?.photos?.[0] ? (
-            <Image source={{ uri: user.photos[0] }} style={styles.photo} />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoIcon}>📷</Text>
-            </View>
-          )}
-          {saving && (
-            <View style={styles.photoOverlay}>
-              <ActivityIndicator color={Colors.white} />
-            </View>
-          )}
-          <View style={styles.editPhotoBtn}>
-            <Text style={styles.editPhotoText}>✏️</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Name & info */}
-        {editing ? (
-          <View style={styles.editSection}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your name"
-            />
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.input, styles.bioInput]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell people about yourself..."
-              multiline
-              maxLength={200}
-            />
-            <View style={styles.editBtns}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={saveProfile} disabled={saving}>
-                {saving
-                  ? <ActivityIndicator color={Colors.white} />
-                  : <Text style={styles.saveText}>Save</Text>
-                }
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.infoSection}>
-            <Text style={styles.name}>{user?.name ?? 'Your Name'}</Text>
-            {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
-            <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)}>
-              <Text style={styles.editBtnText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Stats */}
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>0</Text>
-            <Text style={styles.statLabel}>Matches</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>0</Text>
-            <Text style={styles.statLabel}>Likes</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>0</Text>
-            <Text style={styles.statLabel}>Views</Text>
-          </View>
+      <ScrollView>
+        {/* Cover + Avatar */}
+        <View style={styles.coverSection}>
+          <View style={styles.cover} />
+          <TouchableOpacity style={styles.photoWrapper} onPress={pickPhoto}>
+            {user?.photos?.[0] ? (
+              <Image source={{ uri: user.photos[0] }} style={styles.photo} />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Text style={styles.photoIcon}>📷</Text>
+                <Text style={styles.addPhotoText}>Add photo</Text>
+              </View>
+            )}
+            {saving && (
+              <View style={styles.photoOverlay}>
+                <ActivityIndicator color={Colors.white} />
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsBtn} onPress={handleLogout}>
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Photo grid */}
-        {(user?.photos?.length ?? 0) > 1 && (
-          <View style={styles.photoGrid}>
-            <Text style={styles.sectionTitle}>My Photos</Text>
-            <View style={styles.grid}>
-              {user?.photos?.map((uri, i) => (
-                <Image key={i} source={{ uri }} style={styles.gridPhoto} />
-              ))}
+        {/* Name, gender, ID */}
+        <View style={styles.nameSection}>
+          <Text style={styles.nameText}>
+            {user?.name ?? 'Your Name'} ✏️
+          </Text>
+          <Text style={styles.nameSubtext}>
+            {user?.gender === 'Male' ? '♂' : user?.gender === 'Female' ? '♀' : '⚧'} {user?.age ?? ''}
+            {'  '}ID: {user?.id?.slice(0, 8) ?? '00000000'}
+          </Text>
+        </View>
+
+        {/* Following / Followers */}
+        <View style={styles.followRow}>
+          <TouchableOpacity style={styles.followItem}>
+            <Text style={styles.followNum}>{user?.followingCount ?? 0}</Text>
+            <Text style={styles.followLabel}>Following</Text>
+          </TouchableOpacity>
+          <View style={styles.followDivider} />
+          <TouchableOpacity style={styles.followItem}>
+            <Text style={styles.followNum}>{user?.followersCount ?? 0}</Text>
+            <Text style={styles.followLabel}>Follower</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Diamonds + VIP */}
+        <View style={styles.vipRow}>
+          <TouchableOpacity
+            style={styles.diamondBtn}
+            onPress={() => router.push('/payment')}
+          >
+            <Text style={styles.diamondIcon}>💎</Text>
+            <View>
+              <Text style={styles.diamondCount}>{user?.diamonds ?? 0}</Text>
+              <Text style={styles.diamondLabel}>Buy diamonds  ›</Text>
             </View>
-          </View>
-        )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.vipBtn}
+            onPress={() => router.push('/payment')}
+          >
+            <Text style={styles.vipIcon}>👑</Text>
+            <View>
+              <Text style={styles.vipTitle}>
+                {user?.isPremium ? 'VIP Active ✅' : 'Become VIP'}
+              </Text>
+              <Text style={styles.vipLabel}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Menu */}
+        <View style={styles.menuSection}>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuIcon}>⭐</Text>
+            <Text style={styles.menuText}>My Level</Text>
+            <Text style={styles.menuRight}>Lvl 0  ›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuIcon}>🎒</Text>
+            <Text style={styles.menuText}>My Backpack</Text>
+            <Text style={styles.menuRight}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
+            <Text style={styles.menuIcon}>⚙️</Text>
+            <Text style={styles.menuText}>Settings</Text>
+            <Text style={styles.menuRight}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+            <Text style={styles.menuIcon}>🚪</Text>
+            <Text style={styles.menuText}>Log Out</Text>
+            <Text style={styles.menuRight}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Profile details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>My Details</Text>
+          <Field label="Name" field="name" value={user?.name} />
+          <Field label="Gender" field="gender" value={user?.gender} />
+          <Field label="Birthday" field="dob" value={user?.dob} />
+          <Field label="Location" field="location" value={user?.location} />
+          <Field label="About me" field="bio" value={user?.bio} />
+          <Field label="Purpose" field="purpose" value={user?.purpose} />
+          <Field label="Height" field="height" value={user?.height} />
+          <Field label="Weight" field="weight" value={user?.weight} />
+          <Field label="Education" field="education" value={user?.education} />
+          <Field label="Smoking" field="smoking" value={user?.smoking} />
+          <Field label="Alcohol" field="alcohol" value={user?.alcohol} />
+          <Field label="Children" field="children" value={user?.children} />
+        </View>
       </ScrollView>
+
+      {/* Edit Modal */}
+      {editField && (
+        <View style={modal.overlay}>
+          <View style={modal.box}>
+            <Text style={modal.title}>{editField}</Text>
+            {OPTIONS[editField] ? (
+              OPTIONS[editField].map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[modal.option, (user as any)?.[editField] === opt && modal.selected]}
+                  onPress={() => updateField(editField, opt)}
+                >
+                  <Text style={[modal.optionText, (user as any)?.[editField] === opt && modal.selectedText]}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <TouchableOpacity style={modal.option} onPress={() => setEditField(null)}>
+                <Text style={modal.optionText}>Close</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={modal.cancelBtn} onPress={() => setEditField(null)}>
+              <Text style={modal.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
-  title: { fontSize: 24, fontWeight: Theme.fontWeight.bold, color: Colors.primary },
-  logout: { color: Colors.textLight, fontSize: Theme.fontSize.sm },
-  content: { alignItems: 'center', padding: 20 },
-  photoContainer: { position: 'relative', marginBottom: 20 },
-  photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: Colors.primary },
-  photoPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.border },
-  photoIcon: { fontSize: 40 },
-  photoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 60, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  editPhotoBtn: { position: 'absolute', bottom: 0, right: 0, backgroundColor: Colors.primary, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  editPhotoText: { fontSize: 14 },
-  infoSection: { alignItems: 'center', marginBottom: 24 },
-  name: { fontSize: Theme.fontSize.xl, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 8 },
-  bio: { fontSize: Theme.fontSize.md, color: Colors.textLight, textAlign: 'center', marginBottom: 16 },
-  editBtn: { backgroundColor: Colors.primary, paddingHorizontal: 32, paddingVertical: 10, borderRadius: 24 },
-  editBtnText: { color: Colors.white, fontWeight: Theme.fontWeight.semibold },
-  editSection: { width: '100%', marginBottom: 24 },
-  label: { fontSize: Theme.fontSize.sm, color: Colors.textLight, marginBottom: 6, marginTop: 12 },
-  input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 12, fontSize: Theme.fontSize.md, color: Colors.text, backgroundColor: Colors.surface },
-  bioInput: { height: 100, textAlignVertical: 'top' },
-  editBtns: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  cancelBtn: { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
-  cancelText: { color: Colors.text, fontWeight: Theme.fontWeight.semibold },
-  saveBtn: { flex: 2, padding: 12, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center' },
-  saveText: { color: Colors.white, fontWeight: Theme.fontWeight.bold },
-  stats: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 16, padding: 20, width: '100%', marginBottom: 24 },
-  stat: { flex: 1, alignItems: 'center' },
-  statNum: { fontSize: Theme.fontSize.xl, fontWeight: Theme.fontWeight.bold, color: Colors.primary },
-  statLabel: { fontSize: Theme.fontSize.xs, color: Colors.textLight, marginTop: 4 },
-  statDivider: { width: 1, backgroundColor: Colors.border },
-  photoGrid: { width: '100%' },
-  sectionTitle: { fontSize: Theme.fontSize.lg, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  gridPhoto: { width: 100, height: 100, borderRadius: 12 },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  coverSection: { position: 'relative', marginBottom: 50 },
+  cover: { width: '100%', height: 130, backgroundColor: Colors.primary },
+  photoWrapper: { position: 'absolute', bottom: -45, alignSelf: 'center', width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: Colors.white, overflow: 'hidden', backgroundColor: Colors.surface },
+  photo: { width: '100%', height: '100%' },
+  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#A8C5F0' },
+  photoIcon: { fontSize: 24 },
+  addPhotoText: { fontSize: 10, color: Colors.white },
+  photoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
+  settingsBtn: { position: 'absolute', top: 12, right: 16 },
+  settingsIcon: { fontSize: 24 },
+  nameSection: { alignItems: 'center', marginBottom: 16 },
+  nameText: { fontSize: 20, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  nameSubtext: { fontSize: 13, color: Colors.textLight, marginTop: 4 },
+  followRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, marginHorizontal: 16, borderRadius: 12, padding: 16, marginBottom: 12 },
+  followItem: { flex: 1, alignItems: 'center' },
+  followNum: { fontSize: 20, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  followLabel: { fontSize: 12, color: Colors.textLight, marginTop: 2 },
+  followDivider: { width: 1, height: 30, backgroundColor: Colors.border },
+  vipRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, gap: 10 },
+  diamondBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F4FF', borderRadius: 12, padding: 14, gap: 10 },
+  diamondIcon: { fontSize: 28 },
+  diamondCount: { fontSize: 18, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  diamondLabel: { fontSize: 11, color: Colors.primary },
+  vipBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8E7', borderRadius: 12, padding: 14, gap: 10 },
+  vipIcon: { fontSize: 28 },
+  vipTitle: { fontSize: 13, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  vipLabel: { fontSize: 16, color: Colors.textLight },
+  menuSection: { marginHorizontal: 16, backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', marginBottom: 12 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 12 },
+  menuIcon: { fontSize: 22, width: 32 },
+  menuText: { flex: 1, fontSize: 16, color: Colors.text },
+  menuRight: { fontSize: 13, color: Colors.textLight },
+  section: { marginHorizontal: 16, backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  field: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  fieldLeft: { flex: 1 },
+  fieldLabel: { fontSize: 15, fontWeight: Theme.fontWeight.semibold, color: Colors.text },
+  fieldValue: { fontSize: 13, color: Colors.textLight, marginTop: 2 },
+  incomplete: { fontStyle: 'italic' },
+  editLink: { fontSize: 14, color: Colors.primary },
+});
+
+const modal = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  box: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+  title: { fontSize: 18, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 16, textAlign: 'center', textTransform: 'capitalize' },
+  option: { padding: 14, borderRadius: 10, marginBottom: 8, backgroundColor: '#f5f5f5' },
+  selected: { backgroundColor: Colors.primary },
+  optionText: { fontSize: 16, color: Colors.text, textAlign: 'center' },
+  selectedText: { color: Colors.white, fontWeight: Theme.fontWeight.bold },
+  cancelBtn: { padding: 14, marginTop: 4 },
+  cancelText: { fontSize: 16, color: Colors.textLight, textAlign: 'center' },
 });
