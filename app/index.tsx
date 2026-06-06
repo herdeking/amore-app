@@ -8,18 +8,27 @@ export default function Index() {
   const { user, firebaseUid, isLoading } = useAuthStore();
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!firebaseUid) {
+    // Timeout fallback - if loading takes too long, go to login
+    const timeout = setTimeout(() => {
       router.replace('/(auth)/login');
-    } else if (!user) {
-      router.replace('/onboarding');
-    } else {
-      router.replace('/(tabs)/swipe');
+    }, 5000);
+
+    if (!isLoading) {
+      clearTimeout(timeout);
+      if (!firebaseUid) {
+        router.replace('/(auth)/login');
+      } else if (!user || !user.name) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)/swipe');
+      }
     }
+
+    return () => clearTimeout(timeout);
   }, [user, firebaseUid, isLoading]);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
       <ActivityIndicator size="large" color="#FF4B6E" />
     </View>
   );

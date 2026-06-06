@@ -3,24 +3,33 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
-import { registerForPushNotifications } from '../services/notifications';
 
 export const useAuth = () => {
   const { setUser, setFirebaseUid, setLoading } = useAuthStore();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
-      if (firebaseUser) {
-        setFirebaseUid(firebaseUser.uid);
-        const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-        setUser(snap.exists() ? { id: firebaseUser.uid, ...snap.data() } as any : null);
-        await registerForPushNotifications(firebaseUser.uid);
-      } else {
-        setUser(null);
-        setFirebaseUid(null);
+      try {
+        setLoading(true);
+        if (firebaseUser) {
+          setFirebaseUid(firebaseUser.uid);
+          try {
+            const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (snap.exists()) {
+              setUser({ id: firebaseUser.uid, ...snap.data() } as any);
+            } else {
+              setUser({ id: firebaseUser.uid, name: '', photos: [] });
+            }
+          } catch (e) {
+            setUser({ id: firebaseUser.uid, name: '', photos: [] });
+          }
+        } else {
+          setUser(null);
+          setFirebaseUid(null);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsub();
   }, []);
