@@ -4,7 +4,11 @@ import {
   TextInput, Alert, Dimensions, Image, ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
 import { auth } from '../../services/firebase';
 
 const { width, height } = Dimensions.get('window');
@@ -27,6 +31,24 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'main' | 'login' | 'register'>('main');
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+  });
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await promptAsync();
+      if (result?.type === 'success') {
+        const { id_token } = result.params;
+        const credential = GoogleAuthProvider.credential(id_token);
+        await signInWithCredential(auth, credential);
+        router.replace('/');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) return Alert.alert('Error', 'Fill in all fields');
@@ -126,7 +148,7 @@ export default function Login() {
 
         {/* Buttons */}
         <View style={styles.buttons}>
-          <TouchableOpacity style={styles.googleBtn} onPress={() => setMode('login')}>
+          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
             <Text style={styles.googleIcon}>G</Text>
             <Text style={styles.googleText}>Login with Email</Text>
             <View style={styles.lastLogin}>

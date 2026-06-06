@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sendLocalNotification } from '../services/notifications';
 import { User } from '../types';
 
 const DEMO_PROFILES: User[] = [
@@ -29,6 +30,10 @@ export const useSwipe = () => {
       if (user && Math.random() > 0.5) {
         setMatchedUser(user);
         setMatched(true);
+        await sendLocalNotification(
+          "It's a Match! 💕",
+          `You and ${user.name} liked each other!`
+        );
       }
     }
     return undefined;

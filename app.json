@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "amore-app",
+    "name": "Amore",
     "slug": "amore-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,13 +10,17 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.herdeking.amoreapp"
+      "package": "com.herdeking.amoreapp",
+      "adaptiveIcon": {
+        "backgroundColor": "#FF4B6E"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser"
     ],
     "newArchEnabled": false,
     "owner": "amorec",
@@ -24,6 +28,14 @@
       "eas": {
         "projectId": "a5dd444f-6992-4021-99a0-b0af870b64ef"
       }
+    },
+    "splash": {
+      "backgroundColor": "#FF4B6E",
+      "resizeMode": "contain"
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#FF4B6E"
     }
   }
 }
