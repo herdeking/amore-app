@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 
 interface AuthState {
@@ -10,11 +12,23 @@ interface AuthState {
   setLoading: (v: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>(set => ({
-  user: null,
-  firebaseUid: null,
-  isLoading: true,
-  setUser: user => set({ user }),
-  setFirebaseUid: uid => set({ firebaseUid: uid }),
-  setLoading: isLoading => set({ isLoading }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      firebaseUid: null,
+      isLoading: true,
+      setUser: user => set({ user }),
+      setFirebaseUid: uid => set({ firebaseUid: uid }),
+      setLoading: isLoading => set({ isLoading }),
+    }),
+    {
+      name: 'amore-auth-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        user: state.user,
+        firebaseUid: state.firebaseUid,
+      }),
+    }
+  )
+);
