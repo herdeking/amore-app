@@ -76,7 +76,7 @@ export default function Settings() {
         {/* Account */}
         <Section title="Account" />
         <View style={styles.card}>
-          <SettingRow icon="👤" label="Edit Profile" onPress={() => router.back()} />
+          <SettingRow icon="👤" label="Edit Profile" onPress={() => router.push('/(tabs)/profile')} />
           <SettingRow icon="📧" label="Email" value={user?.id?.slice(0, 12) + '...'} />
           <SettingRow icon="🔒" label="Change Password" onPress={() => Alert.alert('Reset Password', 'A reset link will be sent to your email.')} />
           <SettingRow icon="📍" label="Location" value={user?.location ?? 'Not set'} />
@@ -85,9 +85,9 @@ export default function Settings() {
         {/* Discovery */}
         <Section title="Discovery" />
         <View style={styles.card}>
-          <SettingRow icon="🔍" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => {}} />
-          <SettingRow icon="📏" label="Age range" value="18 - 40" onPress={() => {}} />
-          <SettingRow icon="📡" label="Max distance" value="50 km" onPress={() => {}} />
+          <SettingRow icon="🔍" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Coming Soon', 'Filter coming soon!')} />
+          <SettingRow icon="📏" label="Age range" value="18 - 40" onPress={() => Alert.alert('Coming Soon', 'Age filter coming soon!')} />
+          <SettingRow icon="📡" label="Max distance" value="50 km" onPress={() => Alert.alert('Coming Soon', 'Distance filter coming soon!')} />
           <ToggleRow icon="👁" label="Show me online" value={showOnline} onChange={setShowOnline} />
           <ToggleRow icon="📍" label="Show distance" value={showDistance} onChange={setShowDistance} />
         </View>
@@ -111,8 +111,8 @@ export default function Settings() {
         <Section title="Support" />
         <View style={styles.card}>
           <SettingRow icon="❓" label="Help Center" onPress={() => Alert.alert('Help', 'Email: support@amore.com')} />
-          <SettingRow icon="📝" label="Terms of Service" onPress={() => {}} />
-          <SettingRow icon="🔐" label="Privacy Policy" onPress={() => {}} />
+          <SettingRow icon="📝" label="Terms of Service" onPress={() => Alert.alert('Terms', 'By using Amore you agree to our terms.')} />
+          <SettingRow icon="🔐" label="Privacy Policy" onPress={() => Alert.alert('Privacy', 'We protect your data.')} />
           <SettingRow icon="⭐" label="Rate the app" onPress={() => Alert.alert('Rate Us', 'Thank you for your support!')} />
         </View>
 
