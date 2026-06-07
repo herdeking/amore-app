@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
@@ -49,18 +50,18 @@ export default function Settings() {
     <Text style={styles.sectionTitle}>{title}</Text>
   );
 
-  const SettingRow = ({ icon, label, value, onPress }: { icon: string; label: string; value?: string; onPress?: () => void }) => (
+  const SettingRow = ({ icon, label, value, onPress }: { icon: any; label: string; value?: string; onPress?: () => void }) => (
     <TouchableOpacity style={styles.row} onPress={onPress}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <Ionicons name={icon} size={22} color={Colors.primary} style={styles.rowIcon} />
       <Text style={styles.rowLabel}>{label}</Text>
       {value && <Text style={styles.rowValue}>{value}</Text>}
-      <Text style={styles.rowArrow}>›</Text>
+      <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
     </TouchableOpacity>
   );
 
-  const ToggleRow = ({ icon, label, value, onChange }: { icon: string; label: string; value: boolean; onChange: (v: boolean) => void }) => (
+  const ToggleRow = ({ icon, label, value, onChange }: { icon: any; label: string; value: boolean; onChange: (v: boolean) => void }) => (
     <View style={styles.row}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <Ionicons name={icon} size={22} color={Colors.primary} style={styles.rowIcon} />
       <Text style={styles.rowLabel}>{label}</Text>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: Colors.primary }} />
     </View>
@@ -80,9 +81,9 @@ export default function Settings() {
         {/* Account */}
         <Section title="Account" />
         <View style={styles.card}>
-          <SettingRow icon="👤" label="Edit Profile" onPress={() => router.push('/(tabs)/profile')} />
-          <SettingRow icon="📧" label="Email" value={user?.id?.slice(0, 12) + '...'} />
-          <SettingRow icon="🔒" label="Change Password" onPress={async () => {
+          <SettingRow icon="person-outline" label="Edit Profile" onPress={() => router.push('/(tabs)/profile')} />
+          <SettingRow icon="mail-outline" label="Email" value={user?.id?.slice(0, 12) + '...'} />
+          <SettingRow icon="lock-closed-outline" label="Change Password" onPress={async () => {
           try {
             const currentUser = auth.currentUser;
             if (currentUser?.email) {
@@ -95,46 +96,46 @@ export default function Settings() {
             Alert.alert('Error', e.message);
           }
         }} />
-          <SettingRow icon="📍" label="Location" value={user?.location ?? 'Not set'} />
+          <SettingRow icon="location-outline" label="Location" value={user?.location ?? 'Not set'} />
         </View>
 
         {/* Discovery */}
         <Section title="Discovery" />
         <View style={styles.card}>
-          <SettingRow icon="🔍" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Looking For', 'Who are you looking for?', [
+          <SettingRow icon="search-outline" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Looking For', 'Who are you looking for?', [
               {text: 'Men', onPress: () => {}},
               {text: 'Women', onPress: () => {}},
               {text: 'Everyone', onPress: () => {}},
               {text: 'Cancel', style: 'cancel'}
             ])} />
-          <SettingRow icon="📏" label="Age range" value="18 - 40" onPress={() => Alert.alert('Age Range', 'Age range filter will be fully interactive in the next update. Currently set to 18-40.')} />
-          <SettingRow icon="📡" label="Max distance" value="50 km" onPress={() => Alert.alert('Max Distance', 'Distance filter will be fully interactive in the next update. Currently set to 50km.')} />
-          <ToggleRow icon="👁" label="Show me online" value={showOnline} onChange={setShowOnline} />
-          <ToggleRow icon="📍" label="Show distance" value={showDistance} onChange={setShowDistance} />
+          <SettingRow icon="people-outline" label="Age range" value="18 - 40" onPress={() => Alert.alert('Age Range', 'Age range filter will be fully interactive in the next update. Currently set to 18-40.')} />
+          <SettingRow icon="navigate-outline" label="Max distance" value="50 km" onPress={() => Alert.alert('Max Distance', 'Distance filter will be fully interactive in the next update. Currently set to 50km.')} />
+          <ToggleRow icon="eye-outline" label="Show me online" value={showOnline} onChange={setShowOnline} />
+          <ToggleRow icon="location-outline" label="Show distance" value={showDistance} onChange={setShowDistance} />
         </View>
 
         {/* Notifications */}
         <Section title="Notifications" />
         <View style={styles.card}>
-          <ToggleRow icon="🔔" label="Push notifications" value={notifications} onChange={setNotifications} />
-          <ToggleRow icon="💕" label="New matches" value={matches} onChange={setMatches} />
-          <ToggleRow icon="💬" label="New messages" value={messages} onChange={setMessages} />
+          <ToggleRow icon="notifications-outline" label="Push notifications" value={notifications} onChange={setNotifications} />
+          <ToggleRow icon="heart-outline" label="New matches" value={matches} onChange={setMatches} />
+          <ToggleRow icon="chatbubble-outline" label="New messages" value={messages} onChange={setMessages} />
         </View>
 
         {/* Premium */}
         <Section title="Premium" />
         <View style={styles.card}>
-          <SettingRow icon="👑" label="VIP Status" value={user?.isPremium ? 'Active ✅' : 'Not active'} onPress={() => router.push('/payment')} />
-          <SettingRow icon="💎" label="Diamonds" value={`${user?.diamonds ?? 0} 💎`} onPress={() => router.push('/payment')} />
+          <SettingRow icon="star-outline" label="VIP Status" value={user?.isPremium ? 'Active ✅' : 'Not active'} onPress={() => router.push('/payment')} />
+          <SettingRow icon="diamond-outline" label="Diamonds" value={`${user?.diamonds ?? 0} 💎`} onPress={() => router.push('/payment')} />
         </View>
 
         {/* Support */}
         <Section title="Support" />
         <View style={styles.card}>
-          <SettingRow icon="❓" label="Help Center" onPress={() => Alert.alert('Help', 'Email: support@amore.com')} />
-          <SettingRow icon="📝" label="Terms of Service" onPress={() => Alert.alert('Terms', 'By using Amore you agree to our terms.')} />
-          <SettingRow icon="🔐" label="Privacy Policy" onPress={() => Alert.alert('Privacy', 'We protect your data.')} />
-          <SettingRow icon="⭐" label="Rate the app" onPress={() => Alert.alert('Rate Us', 'Thank you for your support!')} />
+          <SettingRow icon="help-circle-outline" label="Help Center" onPress={() => Alert.alert('Help', 'Email: support@amore.com')} />
+          <SettingRow icon="document-text-outline" label="Terms of Service" onPress={() => Alert.alert('Terms', 'By using Amore you agree to our terms.')} />
+          <SettingRow icon="shield-outline" label="Privacy Policy" onPress={() => Alert.alert('Privacy', 'We protect your data.')} />
+          <SettingRow icon="star-outline" label="Rate the app" onPress={() => Alert.alert('Rate Us', 'Thank you for your support!')} />
         </View>
 
         {/* Danger zone */}
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: Theme.fontWeight.bold, color: Colors.textLight, paddingHorizontal: 4, paddingTop: 8, paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 1 },
   card: { backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10 },
-  rowIcon: { fontSize: 20, width: 30 },
+  rowIcon: { marginRight: 4, width: 28 },
   rowLabel: { flex: 1, fontSize: 15, color: Colors.text },
   rowValue: { fontSize: 13, color: Colors.textLight },
   rowArrow: { fontSize: 18, color: Colors.textLight },
