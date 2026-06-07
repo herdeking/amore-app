@@ -2,29 +2,25 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Index() {
   const router = useRouter();
   const { user, firebaseUid, isLoading } = useAuthStore();
+  useAuth();
 
   useEffect(() => {
-    // Timeout fallback - if loading takes too long, go to login
-    const timeout = setTimeout(() => {
-      router.replace('/(auth)/login');
-    }, 5000);
-
-    if (!isLoading) {
-      clearTimeout(timeout);
+    if (isLoading) return;
+    const timer = setTimeout(() => {
       if (!firebaseUid) {
         router.replace('/(auth)/login');
-      } else if (!user || !user.name) {
+      } else if (!user?.name) {
         router.replace('/onboarding');
       } else {
         router.replace('/(tabs)/swipe');
       }
-    }
-
-    return () => clearTimeout(timeout);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [user, firebaseUid, isLoading]);
 
   return (
