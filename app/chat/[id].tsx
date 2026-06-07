@@ -7,6 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { getAIReply, getIcebreakers } from '../../services/aiReply';
+import { sendGift, GIFTS } from '../../services/gifts';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import { recordProfileView } from '../../services/profileViews';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
@@ -26,6 +29,8 @@ export default function ChatScreen() {
   const [text, setText] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [showGifts, setShowGifts] = useState(false);
+  const [translatedMsgs, setTranslatedMsgs] = useState<Record<string, string>>({});
 
   const matchName = 'Sonia';
   const matchProfile = { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
@@ -54,6 +59,56 @@ export default function ChatScreen() {
     };
     setMessages(prev => [...prev, msg]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
+  const handleTranslate = async (msgId: string, text: string) => {
+    if (translatedMsgs[msgId]) {
+      setTranslatedMsgs(prev => { const n = {...prev}; delete n[msgId]; return n; });
+      return;
+    }
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 200,
+          messages: [{ role: 'user', content: 'Translate this to English. Reply with ONLY the translation, nothing else: ' + text }],
+        }),
+      });
+      const data = await response.json();
+      const translation = data.content?.[0]?.text ?? text;
+      setTranslatedMsgs(prev => ({ ...prev, [msgId]: translation }));
+    } catch (e) {
+      Alert.alert('Translation failed', 'Could not translate message.');
+    }
+  };
+
+  const handleSendGift = async (giftId: string) => {
+    setShowGifts(false);
+    const gift = GIFTS.find(g => g.id === giftId);
+    if (!gift) return;
+    if ((user?.diamonds ?? 0) < gift.cost) {
+      Alert.alert('Not enough 💎', `You need ${gift.cost} diamonds. Buy more in the store!`, [
+        { text: 'Buy Diamonds', onPress: () => {} },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+      return;
+    }
+    try {
+      await sendGift(user?.id ?? '', id, giftId, user?.diamonds ?? 0);
+      await updateDoc(doc(db, 'users', user?.id ?? ''), { diamonds: increment(-gift.cost) });
+      const msg = {
+        id: Date.now().toString(),
+        senderId: user?.id ?? 'me',
+        text: `${gift.emoji} Gift: ${gift.name}`,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, msg]);
+      Alert.alert('Gift Sent! ' + gift.emoji, `You sent a ${gift.name} for ${gift.cost} 💎`);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    }
   };
 
   const handleAIReply = async () => {
@@ -141,11 +196,19 @@ export default function ChatScreen() {
               {!isMine(item.senderId) && (
                 <Image source={{ uri: matchPhoto }} style={styles.msgAvatar} />
               )}
-              <View style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}>
+              <TouchableOpacity
+                onLongPress={() => handleTranslate(item.id, item.text)}
+                style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}
+              >
                 <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
                   {item.text}
+                  {translatedMsgs[item.id] && (
+                    <Text style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontStyle: 'italic' }}>
+                      🌍 {translatedMsgs[item.id]}
+                    </Text>
+                  )}
                 </Text>
-              </View>
+              </TouchableOpacity>
               {isMine(item.senderId) && (
                 <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />
               )}
@@ -159,6 +222,26 @@ export default function ChatScreen() {
           <Text style={styles.videoCallIcon}>📞</Text>
           <Text style={styles.videoCallText}>Video call</Text>
         </TouchableOpacity>
+
+        {/* Gift picker */}
+        {showGifts && (
+          <View style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee', padding: 12 }}>
+            <Text style={{ fontSize: 13, color: '#999', marginBottom: 8, fontWeight: '600' }}>Send a Gift (💎 {user?.diamonds ?? 0} available)</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {GIFTS.map(g => (
+                <TouchableOpacity
+                  key={g.id}
+                  onPress={() => handleSendGift(g.id)}
+                  style={{ alignItems: 'center', backgroundColor: '#f9f9f9', borderRadius: 12, padding: 10, width: 70 }}
+                >
+                  <Text style={{ fontSize: 28 }}>{g.emoji}</Text>
+                  <Text style={{ fontSize: 11, color: '#333', marginTop: 2 }}>{g.name}</Text>
+                  <Text style={{ fontSize: 10, color: '#FF4B6E', fontWeight: 'bold' }}>{g.cost}💎</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Quick replies */}
         <FlatList
@@ -176,7 +259,7 @@ export default function ChatScreen() {
 
         {/* Input */}
         <View style={styles.inputRow}>
-          <TouchableOpacity style={styles.inputIcon}>
+          <TouchableOpacity style={styles.inputIcon} onPress={() => setShowGifts(!showGifts)}>
             <Text>🎁</Text>
           </TouchableOpacity>
           <TextInput

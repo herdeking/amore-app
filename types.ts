@@ -23,6 +23,8 @@ export interface User {
   purpose?: string;
   isPremium?: boolean;
   isOnline?: boolean;
+  isVerified?: boolean;
+  verificationPhoto?: string;
   lastSeen?: string;
   diamonds?: number;
   followingCount?: number;

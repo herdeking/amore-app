@@ -199,6 +199,29 @@ export default function Profile() {
             <Text style={styles.menuText}>My Backpack</Text>
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={async () => {
+            if (user?.isVerified) {
+              Alert.alert('Already Verified ✅', 'Your profile is verified!');
+              return;
+            }
+            Alert.alert(
+              'Get Verified ✅',
+              'Take a selfie matching a pose to verify your identity. Verified profiles get 3x more matches!',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Verify Now', onPress: async () => {
+                  const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+                  if (!result.canceled && user) {
+                    Alert.alert('Submitted! ✅', 'Your verification photo has been submitted. We will review it within 24 hours.');
+                  }
+                }}
+              ]
+            );
+          }}>
+            <Text style={styles.menuIcon}>{user?.isVerified ? '✅' : '🔵'}</Text>
+            <Text style={styles.menuText}>{user?.isVerified ? 'Verified ✅' : 'Get Verified'}</Text>
+            <Text style={styles.menuRight}>›</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
             <Ionicons name="settings-outline" size={22} color={Colors.primary} />
             <Text style={styles.menuText}>Settings</Text>

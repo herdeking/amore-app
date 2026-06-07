@@ -4,6 +4,8 @@ import { Badge } from '../ui/Badge';
 import { Theme } from '../../constants/theme';
 import { User } from '../../types';
 import { watchPresence } from '../../services/presence';
+import { calculateMatchScore, getScoreColor, getScoreLabel } from '../../services/matchScore';
+import { useAuthStore } from '../../store/authStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +16,10 @@ interface Props {
 
 export const SwipeCard: React.FC<Props> = ({ user, isTop }) => {
   const [isOnline, setIsOnline] = useState(user.isOnline ?? false);
+  const { user: currentUser } = useAuthStore();
+  const matchScore = currentUser ? calculateMatchScore(currentUser as any, user) : 0;
+  const scoreColor = getScoreColor(matchScore);
+  const scoreLabel = getScoreLabel(matchScore);
 
   useEffect(() => {
     const unsubscribe = watchPresence(user.id, setIsOnline);
@@ -34,6 +40,16 @@ export const SwipeCard: React.FC<Props> = ({ user, isTop }) => {
             ? <Text style={styles.onlineText}>● Online now</Text>
             : <Text style={styles.onlineText}>○ Offline</Text>
           }
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <View style={{ backgroundColor: scoreColor, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>{matchScore}% {scoreLabel}</Text>
+            </View>
+            {user.isVerified && (
+              <View style={{ backgroundColor: '#3b82f6', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>✅ Verified</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.location}>📍 {user.location}</Text>
           {user.bio ? <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text> : null}
           <View style={styles.interests}>
