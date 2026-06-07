@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { signOut } from 'firebase/auth';
+import { signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/colors';
@@ -78,7 +78,19 @@ export default function Settings() {
         <View style={styles.card}>
           <SettingRow icon="👤" label="Edit Profile" onPress={() => router.push('/(tabs)/profile')} />
           <SettingRow icon="📧" label="Email" value={user?.id?.slice(0, 12) + '...'} />
-          <SettingRow icon="🔒" label="Change Password" onPress={() => Alert.alert('Reset Password', 'A reset link will be sent to your email.')} />
+          <SettingRow icon="🔒" label="Change Password" onPress={async () => {
+          try {
+            const currentUser = auth.currentUser;
+            if (currentUser?.email) {
+              await sendPasswordResetEmail(auth, currentUser.email);
+              Alert.alert('Email Sent ✅', 'Password reset link sent to ' + currentUser.email);
+            } else {
+              Alert.alert('Error', 'No email found for this account.');
+            }
+          } catch(e: any) {
+            Alert.alert('Error', e.message);
+          }
+        }} />
           <SettingRow icon="📍" label="Location" value={user?.location ?? 'Not set'} />
         </View>
 

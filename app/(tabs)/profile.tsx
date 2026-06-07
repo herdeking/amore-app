@@ -188,12 +188,12 @@ export default function Profile() {
 
         {/* Menu */}
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('My Level ⭐', 'You are Level 0. Like profiles and get matches to level up! More features unlock at higher levels.')}>
             <Text style={styles.menuIcon}>⭐</Text>
             <Text style={styles.menuText}>My Level</Text>
             <Text style={styles.menuRight}>Lvl 0  ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('My Backpack 🎒', 'Your backpack is empty. Buy gifts and special items from the store to send to your matches!')}>
             <Text style={styles.menuIcon}>🎒</Text>
             <Text style={styles.menuText}>My Backpack</Text>
             <Text style={styles.menuRight}>›</Text>
