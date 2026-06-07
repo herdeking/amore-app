@@ -20,15 +20,10 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "newArchEnabled": false,
-    "owner": "amorec",
-    "extra": {
-      "eas": {
-        "projectId": "a5dd444f-6992-4021-99a0-b0af870b64ef"
-      }
-    },
     "splash": {
       "backgroundColor": "#FF4B6E",
       "resizeMode": "contain"
@@ -36,6 +31,13 @@
     "notification": {
       "icon": "./assets/icon.png",
       "color": "#FF4B6E"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a1b1eacd-7188-44ad-8980-6fe5a6013b73"
+      }
+    },
+    "owner": "amore1"
   }
 }

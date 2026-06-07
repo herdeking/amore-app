@@ -7,7 +7,7 @@ export default function TabsLayout() {
       headerShown: false,
       tabBarActiveTintColor: '#FF4B6E',
       tabBarInactiveTintColor: '#999',
-      tabBarStyle: { height: 60, paddingBottom: 8 },
+      tabBarStyle: { height: 70, paddingBottom: 10, paddingTop: 4 },
     }}>
       <Tabs.Screen name="swipe" options={{ title: 'Discover', tabBarIcon: ({ color, size }) => <Ionicons name="albums" size={size} color={color} /> }} />
       <Tabs.Screen name="likes" options={{ title: 'Likes', tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} /> }} />

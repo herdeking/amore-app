@@ -1,5 +1,5 @@
 const CLOUD_NAME = 'danwexfev';
-const UPLOAD_PRESET = 'ml_default'; // change this to your preset name
+const UPLOAD_PRESET = 'Amore_upload'; // change this to your preset name
 
 export const uploadToCloudinary = async (uri: string): Promise<string> => {
   const formData = new FormData();

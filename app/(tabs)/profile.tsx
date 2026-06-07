@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { TextInput } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
   ScrollView, Image, ActivityIndicator
@@ -13,6 +15,25 @@ import { auth, db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
+
+const TextInputField = ({ field, onSave, onClose }: { field: string; onSave: (f: string, v: string) => void; onClose: () => void }) => {
+  const [val, setVal] = React.useState('');
+  return (
+    <View>
+      <TextInput
+        style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 12 }}
+        placeholder={`Enter ${field}`}
+        value={val}
+        onChangeText={setVal}
+        keyboardType={field === 'height' || field === 'weight' ? 'numeric' : 'default'}
+        autoFocus
+      />
+      <TouchableOpacity style={{ padding: 14, backgroundColor: '#FF4B6E', borderRadius: 10, marginBottom: 8 }} onPress={() => onSave(field, val)}>
+        <Text style={{ color: '#fff', textAlign: 'center', fontSize: 16 }}>Save</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const OPTIONS: Record<string, string[]> = {
   gender: ['Male', 'Female', 'Other'],
@@ -119,9 +140,7 @@ export default function Profile() {
 
         {/* Name, gender, ID */}
         <View style={styles.nameSection}>
-          <Text style={styles.nameText}>
-            {user?.name ?? 'Your Name'} ✏️
-          </Text>
+          <TouchableOpacity onPress={() => setEditField('name')}><Text style={styles.nameText}>{user?.name ?? 'Your Name'} ✏️</Text></TouchableOpacity>
           <Text style={styles.nameSubtext}>
             {user?.gender === 'Male' ? '♂' : user?.gender === 'Female' ? '♀' : '⚧'} {user?.age ?? ''}
             {'  '}ID: {user?.id?.slice(0, 8) ?? '00000000'}
@@ -226,10 +245,16 @@ export default function Profile() {
                   </Text>
                 </TouchableOpacity>
               ))
+            ) : editField === 'dob' ? (
+              <DateTimePicker
+                value={user?.dob ? new Date(user.dob) : new Date()}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                onChange={(_, date) => { if (date) updateField('dob', date.toISOString().split('T')[0]); }}
+              />
             ) : (
-              <TouchableOpacity style={modal.option} onPress={() => setEditField(null)}>
-                <Text style={modal.optionText}>Close</Text>
-              </TouchableOpacity>
+              <TextInputField field={editField} onSave={updateField} onClose={() => setEditField(null)} />
             )}
             <TouchableOpacity style={modal.cancelBtn} onPress={() => setEditField(null)}>
               <Text style={modal.cancelText}>Cancel</Text>

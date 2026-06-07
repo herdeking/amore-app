@@ -22,6 +22,8 @@ export interface User {
   sociability?: string;
   purpose?: string;
   isPremium?: boolean;
+  isOnline?: boolean;
+  lastSeen?: string;
   diamonds?: number;
   followingCount?: number;
   followersCount?: number;
