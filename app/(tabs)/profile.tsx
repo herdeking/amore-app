@@ -123,7 +123,7 @@ export default function Profile() {
               <Image source={{ uri: user.photos[0] }} style={styles.photo} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoIcon}>📷</Text>
+                <Text style={styles.amoreLogoText}>💕</Text>
                 <Text style={styles.addPhotoText}>Add photo</Text>
               </View>
             )}
@@ -274,6 +274,7 @@ const styles = StyleSheet.create({
   photo: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#A8C5F0' },
   photoIcon: { fontSize: 24 },
+  amoreLogoText: { fontSize: 32, color: '#FF4B6E' },
   addPhotoText: { fontSize: 10, color: Colors.white },
   photoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   settingsBtn: { position: 'absolute', top: 12, right: 16 },

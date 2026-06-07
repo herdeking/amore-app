@@ -97,9 +97,14 @@ export default function Settings() {
         {/* Discovery */}
         <Section title="Discovery" />
         <View style={styles.card}>
-          <SettingRow icon="🔍" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Coming Soon', 'Filter coming soon!')} />
-          <SettingRow icon="📏" label="Age range" value="18 - 40" onPress={() => Alert.alert('Coming Soon', 'Age filter coming soon!')} />
-          <SettingRow icon="📡" label="Max distance" value="50 km" onPress={() => Alert.alert('Coming Soon', 'Distance filter coming soon!')} />
+          <SettingRow icon="🔍" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Looking For', 'Who are you looking for?', [
+              {text: 'Men', onPress: () => {}},
+              {text: 'Women', onPress: () => {}},
+              {text: 'Everyone', onPress: () => {}},
+              {text: 'Cancel', style: 'cancel'}
+            ])} />
+          <SettingRow icon="📏" label="Age range" value="18 - 40" onPress={() => Alert.alert('Age Range', 'Age range filter will be fully interactive in the next update. Currently set to 18-40.')} />
+          <SettingRow icon="📡" label="Max distance" value="50 km" onPress={() => Alert.alert('Max Distance', 'Distance filter will be fully interactive in the next update. Currently set to 50km.')} />
           <ToggleRow icon="👁" label="Show me online" value={showOnline} onChange={setShowOnline} />
           <ToggleRow icon="📍" label="Show distance" value={showDistance} onChange={setShowDistance} />
         </View>
