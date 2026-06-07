@@ -15,8 +15,8 @@ const PLANS = [
   {
     id: 'weekly',
     label: 'Weekly VIP',
-    price: '₦1,500',
-    originalPrice: '₦3,000',
+    price: '₦2,000',
+    originalPrice: '₦4,000',
     discount: '50% OFF',
     description: 'First subscriber discount!',
     perks: ['Unlimited swipes', 'See who liked you', 'Unlimited video calls', 'Priority in discovery', 'No ads'],
@@ -26,7 +26,7 @@ const PLANS = [
   {
     id: 'monthly',
     label: 'Monthly VIP',
-    price: '₦10,000',
+    price: '₦6,500',
     originalPrice: null,
     discount: null,
     description: 'Best value for serious daters',
