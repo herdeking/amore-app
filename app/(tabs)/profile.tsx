@@ -14,6 +14,7 @@ import { uploadToCloudinary } from '../../services/cloudinary';
 import { auth, db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../constants/theme';
 
 const TextInputField = ({ field, onSave, onClose }: { field: string; onSave: (f: string, v: string) => void; onClose: () => void }) => {
@@ -134,7 +135,7 @@ export default function Profile() {
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.settingsBtn} onPress={handleLogout}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={24} color={Colors.white} />
           </TouchableOpacity>
         </View>
 
@@ -189,22 +190,22 @@ export default function Profile() {
         {/* Menu */}
         <View style={styles.menuSection}>
           <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('My Level ⭐', 'You are Level 0. Like profiles and get matches to level up! More features unlock at higher levels.')}>
-            <Text style={styles.menuIcon}>⭐</Text>
+            <Ionicons name="star-outline" size={22} color={Colors.primary} />
             <Text style={styles.menuText}>My Level</Text>
             <Text style={styles.menuRight}>Lvl 0  ›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('My Backpack 🎒', 'Your backpack is empty. Buy gifts and special items from the store to send to your matches!')}>
-            <Text style={styles.menuIcon}>🎒</Text>
+            <Ionicons name="bag-outline" size={22} color={Colors.primary} />
             <Text style={styles.menuText}>My Backpack</Text>
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
-            <Text style={styles.menuIcon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={22} color={Colors.primary} />
             <Text style={styles.menuText}>Settings</Text>
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-            <Text style={styles.menuIcon}>🚪</Text>
+            <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
             <Text style={styles.menuText}>Log Out</Text>
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
