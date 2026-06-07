@@ -43,7 +43,7 @@ export const useSwipe = () => {
   const swipe = async (id: string, action: 'like' | 'pass' | 'superlike') => {
     if (!user?.id) {
       // demo mode
-      return { matched: False };
+      return { matched: false };
     }
     const result = await recordSwipe({
       userId: user.id,

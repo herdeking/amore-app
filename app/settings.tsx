@@ -19,6 +19,10 @@ export default function Settings() {
   const [messages, setMessages] = useState(true);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
+  const [lookingFor, setLookingFor] = useState(user?.lookingFor ?? 'Everyone');
+  const [minAge, setMinAge] = useState(18);
+  const [maxAge, setMaxAge] = useState(40);
+  const [distance, setDistance] = useState(50);
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure?', [

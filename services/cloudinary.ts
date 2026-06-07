@@ -1,20 +1,29 @@
 const CLOUD_NAME = 'danwexfev';
-const UPLOAD_PRESET = 'Amore_upload';
+const UPLOAD_PRESET = 'ml_default';
 
 export const uploadToCloudinary = async (uri: string): Promise<string> => {
+  const formData = new FormData();
+  
   const filename = uri.split('/').pop() ?? 'photo.jpg';
-  const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  const match = /\.(\w+)$/.exec(filename);
+  const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-  const form = new FormData();
-  form.append('file', { uri, name: filename, type: mimeType } as any);
-  form.append('upload_preset', UPLOAD_PRESET);
+  formData.append('file', { uri, name: filename, type } as any);
+  formData.append('upload_preset', UPLOAD_PRESET);
 
-  const res = await fetch(
+  const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: form }
+    {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+    }
   );
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return json.secure_url;
+
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.secure_url;
 };
