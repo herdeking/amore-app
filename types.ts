@@ -22,6 +22,7 @@ export interface User {
   sociability?: string;
   purpose?: string;
   isPremium?: boolean;
+  bannerPhoto?: string;
   isOnline?: boolean;
   isVerified?: boolean;
   verificationPhoto?: string;

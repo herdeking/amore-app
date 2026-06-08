@@ -55,6 +55,7 @@ export default function Profile() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
+  const [savingBanner, setSavingBanner] = useState(false);
   const [editField, setEditField] = useState<string | null>(null);
 
   const handleLogout = async () => {
@@ -84,6 +85,25 @@ export default function Profile() {
         Alert.alert('Error', e.message);
       } finally {
         setSaving(false);
+      }
+    }
+  };
+
+  const pickBanner = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && user) {
+      setSavingBanner(true);
+      try {
+        const url = await uploadToCloudinary(result.assets[0].uri);
+        await updateDoc(doc(db, 'users', user.id), { bannerPhoto: url });
+        setUser({ ...user, bannerPhoto: url } as any);
+      } catch (e: any) {
+        Alert.alert('Error', e.message);
+      } finally {
+        setSavingBanner(false);
       }
     }
   };
@@ -118,7 +138,16 @@ export default function Profile() {
       <ScrollView>
         {/* Cover + Avatar */}
         <View style={styles.coverSection}>
-          <View style={styles.cover} />
+          <TouchableOpacity onPress={pickBanner} activeOpacity={0.9}>
+            {(user as any)?.bannerPhoto ? (
+              <Image source={{ uri: (user as any).bannerPhoto }} style={{ width: '100%', height: 130, resizeMode: 'cover' }} />
+            ) : (
+              <View style={styles.cover}>
+                {savingBanner && <ActivityIndicator color={Colors.white} style={{ marginTop: 50 }} />}
+                <Text style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: savingBanner ? 8 : 55, fontSize: 12 }}>Tap to add cover photo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity style={styles.photoWrapper} onPress={pickPhoto}>
             {user?.photos?.[0] ? (
               <Image source={{ uri: user.photos[0] }} style={styles.photo} />
@@ -293,7 +322,7 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   coverSection: { position: 'relative', marginBottom: 50 },
-  cover: { width: '100%', height: 130, backgroundColor: Colors.primary },
+  cover: { width: '100%', height: 130, backgroundColor: Colors.primary, resizeMode: 'cover' },
   photoWrapper: { position: 'absolute', bottom: -45, alignSelf: 'center', width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: Colors.white, overflow: 'hidden', backgroundColor: Colors.surface },
   photo: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#A8C5F0' },
