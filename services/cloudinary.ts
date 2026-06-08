@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const CLOUD_NAME = 'danwexfev';
 const UPLOAD_PRESET = 'ml_default';
