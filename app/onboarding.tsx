@@ -6,7 +6,7 @@ import {
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToCloudinary } from '../services/cloudinary';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
@@ -55,7 +55,7 @@ export default function Onboarding() {
         photos: uploadedPhotos,
         createdAt: new Date().toISOString(),
         onboardingComplete: true,
-      });
+      }, { merge: true });
 
       router.replace('/(tabs)/swipe');
     } catch (e: any) {

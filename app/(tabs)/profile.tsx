@@ -68,25 +68,46 @@ export default function Profile() {
     ]);
   };
 
-  const pickPhoto = async () => {
+  const maxPhotos = user?.isPremium ? 6 : 2;
+
+  const pickPhoto = async (index?: number) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
+      allowsMultipleSelection: false,
     });
     if (!result.canceled && user) {
       setSaving(true);
       try {
         const uri = result.assets[0].uri;
         const url = await uploadToCloudinary(uri);
-        const newPhotos = [url, ...(user.photos ?? []).slice(1)];
+        const currentPhotos = [...(user.photos ?? [])];
+        if (index !== undefined) {
+          currentPhotos[index] = url;
+        } else {
+          currentPhotos.push(url);
+        }
+        const newPhotos = currentPhotos.slice(0, maxPhotos);
         await updateDoc(doc(db, 'users', user.id), { photos: newPhotos });
         setUser({ ...user, photos: newPhotos });
       } catch (e: any) {
-        Alert.alert('Error', e.message);
+        Alert.alert('Upload Error', e.message);
       } finally {
         setSaving(false);
       }
     }
+  };
+
+  const removePhoto = async (index: number) => {
+    if (!user) return;
+    Alert.alert('Remove Photo', 'Remove this photo?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+        const newPhotos = user.photos.filter((_, i) => i !== index);
+        await updateDoc(doc(db, 'users', user.id), { photos: newPhotos });
+        setUser({ ...user, photos: newPhotos });
+      }}
+    ]);
   };
 
   const pickBanner = async () => {
@@ -148,7 +169,7 @@ export default function Profile() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.photoWrapper} onPress={pickPhoto}>
+          <TouchableOpacity style={styles.photoWrapper} onPress={() => pickPhoto(0)}>
             {user?.photos?.[0] ? (
               <Image source={{ uri: user.photos[0] }} style={styles.photo} />
             ) : (
@@ -276,7 +297,7 @@ export default function Profile() {
               </TouchableOpacity>
             ))}
             {(user?.photos?.length ?? 0) < (user?.isPremium ? 6 : 2) && (
-              <TouchableOpacity style={styles.addPhotoCell} onPress={pickPhoto}>
+              <TouchableOpacity style={styles.addPhotoCell} onPress={() => pickPhoto(0)}>
                 <Ionicons name="add" size={32} color={Colors.white} />
                 <Text style={styles.addPhotoCellText}>Add</Text>
               </TouchableOpacity>
@@ -359,6 +380,17 @@ const styles = StyleSheet.create({
   photo: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#A8C5F0' },
   photoIcon: { fontSize: 24 },
+  cameraBtn: { position: 'absolute', bottom: 2, right: 2, backgroundColor: Colors.primary, borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  photoGridSection: { marginHorizontal: 16, marginBottom: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 16 },
+  photoGridHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  photoGridTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text },
+  photoGridAdd: { fontSize: 14, color: Colors.primary, fontWeight: Theme.fontWeight.semibold },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  photoGridCell: { width: '31%', aspectRatio: 0.85, borderRadius: 10, overflow: 'hidden' },
+  photoGridImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  photoGridEmpty: { flex: 1, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  premiumPhotoHint: { marginTop: 10, backgroundColor: '#FFF8E7', borderRadius: 8, padding: 8, alignItems: 'center' },
+  premiumPhotoHintText: { fontSize: 12, color: '#B8860B', fontWeight: '600' },
   amoreLogoText: { fontSize: 32, color: '#FF4B6E' },
   addPhotoText: { fontSize: 10, color: Colors.white },
   photoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
@@ -390,7 +422,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 16 },
   photoCount: { fontSize: 13, color: Colors.textLight, padding: 16 },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 6 },
+
   photoCell: { width: 100, height: 120, borderRadius: 12, overflow: 'hidden' },
   gridPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
   addPhotoCell: { width: 100, height: 120, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },

@@ -9,17 +9,22 @@ export default function Index() {
 
   useEffect(() => {
     if (isLoading) return;
-    
+
     const timer = setTimeout(() => {
       if (!firebaseUid) {
         router.replace('/(auth)/login');
-      } else if (!user?.name) {
-        router.replace('/onboarding');
+      } else if (!user?.name || user?.name === '') {
+        // Only send to onboarding if truly new user (no name AND no photos)
+        if (!user?.photos || user?.photos?.length === 0) {
+          router.replace('/onboarding');
+        } else {
+          router.replace('/(tabs)/swipe');
+        }
       } else {
         router.replace('/(tabs)/swipe');
       }
-    }, 300);
-    
+    }, 500);
+
     return () => clearTimeout(timer);
   }, [isLoading, firebaseUid, user?.name]);
 
