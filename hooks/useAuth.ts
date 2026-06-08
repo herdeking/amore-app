@@ -5,12 +5,11 @@ import { auth, db } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
 
 export const useAuth = () => {
-  const { setUser, setFirebaseUid, setLoading } = useAuthStore();
+  const { setUser, setFirebaseUid, setLoading, firebaseUid } = useAuthStore();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        setLoading(true);
         if (firebaseUser) {
           setFirebaseUid(firebaseUser.uid);
           try {
@@ -20,7 +19,7 @@ export const useAuth = () => {
             } else {
               setUser({ id: firebaseUser.uid, name: '', photos: [] });
             }
-          } catch (e) {
+          } catch {
             setUser({ id: firebaseUser.uid, name: '', photos: [] });
           }
         } else {
