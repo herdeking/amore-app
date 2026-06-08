@@ -1,20 +1,30 @@
+import * as FileSystem from 'expo-file-system';
+
 const CLOUD_NAME = 'danwexfev';
 const UPLOAD_PRESET = 'Amore_upload';
 
 export const uploadToCloudinary = async (uri: string): Promise<string> => {
-  const filename = uri.split('/').pop() ?? 'photo.jpg';
-  const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-  const form = new FormData();
-  form.append('file', { uri, name: filename, type: mimeType } as any);
-  form.append('upload_preset', UPLOAD_PRESET);
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: `data:image/jpeg;base64,${base64}`,
+          upload_preset: UPLOAD_PRESET,
+        }),
+      }
+    );
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: form }
-  );
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return json.secure_url;
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.secure_url;
+  } catch (e: any) {
+    throw new Error(e.message);
+  }
 };
