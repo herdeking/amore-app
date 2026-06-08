@@ -1,14 +1,20 @@
+import * as FileSystem from 'expo-file-system';
+
 const CLOUD_NAME = 'danwexfev';
 const UPLOAD_PRESET = 'ml_default';
 
 export const uploadToCloudinary = async (uri: string): Promise<string> => {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        file: uri,
+        file: `data:image/jpeg;base64,${base64}`,
         upload_preset: UPLOAD_PRESET,
       }),
     }

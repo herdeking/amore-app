@@ -118,6 +118,8 @@ export default function Settings() {
               { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); } },
               { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); } },
               { text: "30 - 50", onPress: () => { setMinAge(30); setMaxAge(50); } },
+              { text: "40 - 65", onPress: () => { setMinAge(40); setMaxAge(65); } },
+              { text: "50 - 80", onPress: () => { setMinAge(50); setMaxAge(80); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
