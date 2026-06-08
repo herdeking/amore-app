@@ -102,14 +102,35 @@ export default function Settings() {
         {/* Discovery */}
         <Section title="Discovery" />
         <View style={styles.card}>
-          <SettingRow icon="search-outline" label="Looking for" value={user?.lookingFor ?? 'Everyone'} onPress={() => Alert.alert('Looking For', 'Who are you looking for?', [
-              {text: 'Men', onPress: () => {}},
-              {text: 'Women', onPress: () => {}},
-              {text: 'Everyone', onPress: () => {}},
-              {text: 'Cancel', style: 'cancel'}
-            ])} />
-          <SettingRow icon="people-outline" label="Age range" value="18 - 40" onPress={() => Alert.alert('Age Range', 'Age range filter will be fully interactive in the next update. Currently set to 18-40.')} />
-          <SettingRow icon="navigate-outline" label="Max distance" value="50 km" onPress={() => Alert.alert('Max Distance', 'Distance filter will be fully interactive in the next update. Currently set to 50km.')} />
+          <SettingRow icon="search-outline" label="Looking for" value={lookingFor} onPress={() => {
+            Alert.alert("Looking For", "Who are you looking for?", [
+              { text: "Men", onPress: () => setLookingFor("Men") },
+              { text: "Women", onPress: () => setLookingFor("Women") },
+              { text: "Everyone", onPress: () => setLookingFor("Everyone") },
+              { text: "Cancel", style: "cancel" },
+            ]);
+          }} />
+
+          <SettingRow icon="people-outline" label="Age range" value={`${minAge} - ${maxAge}`} onPress={() => {
+            Alert.alert("Age Range", "Select age range", [
+              { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); } },
+              { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); } },
+              { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); } },
+              { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); } },
+              { text: "30 - 50", onPress: () => { setMinAge(30); setMaxAge(50); } },
+              { text: "Cancel", style: "cancel" },
+            ]);
+          }} />
+          <SettingRow icon="navigate-outline" label="Max distance" value={distance === 999 ? "Worldwide" : `${distance} km`} onPress={() => {
+            Alert.alert("Max Distance", "Select max distance", [
+              { text: "10 km", onPress: () => setDistance(10) },
+              { text: "25 km", onPress: () => setDistance(25) },
+              { text: "50 km", onPress: () => setDistance(50) },
+              { text: "100 km", onPress: () => setDistance(100) },
+              { text: "Worldwide", onPress: () => setDistance(999) },
+              { text: "Cancel", style: "cancel" },
+            ]);
+          }} />
           <ToggleRow icon="eye-outline" label="Show me online" value={showOnline} onChange={setShowOnline} />
           <ToggleRow icon="location-outline" label="Show distance" value={showDistance} onChange={setShowDistance} />
         </View>
