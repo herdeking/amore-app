@@ -263,6 +263,38 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
+        {/* Photo Grid */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Photos</Text>
+            <Text style={styles.photoCount}>{user?.photos?.length ?? 0}/{user?.isPremium ? 6 : 2}</Text>
+          </View>
+          <View style={styles.photoGrid}>
+            {(user?.photos ?? []).map((uri, i) => (
+              <TouchableOpacity key={i} style={styles.photoCell}>
+                <Image source={{ uri }} style={styles.gridPhoto} />
+              </TouchableOpacity>
+            ))}
+            {(user?.photos?.length ?? 0) < (user?.isPremium ? 6 : 2) && (
+              <TouchableOpacity style={styles.addPhotoCell} onPress={pickPhoto}>
+                <Ionicons name="add" size={32} color={Colors.white} />
+                <Text style={styles.addPhotoCellText}>Add</Text>
+              </TouchableOpacity>
+            )}
+            {!(user?.isPremium) && (user?.photos?.length ?? 0) >= 2 && (
+              <TouchableOpacity style={styles.lockedCell} onPress={() => router.push('/payment')}>
+                <Ionicons name="lock-closed" size={24} color={Colors.white} />
+                <Text style={styles.lockedText}>VIP</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {!user?.isPremium && (
+            <TouchableOpacity style={styles.upgradeBar} onPress={() => router.push('/payment')}>
+              <Text style={styles.upgradeText}>👑 Upgrade to VIP for 6 photos</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Profile details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>My Details</Text>
@@ -356,6 +388,17 @@ const styles = StyleSheet.create({
   menuRight: { fontSize: 13, color: Colors.textLight },
   section: { marginHorizontal: 16, backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 16 },
+  photoCount: { fontSize: 13, color: Colors.textLight, padding: 16 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 6 },
+  photoCell: { width: 100, height: 120, borderRadius: 12, overflow: 'hidden' },
+  gridPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
+  addPhotoCell: { width: 100, height: 120, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  addPhotoCellText: { color: Colors.white, fontSize: 13, marginTop: 4, fontWeight: Theme.fontWeight.bold },
+  lockedCell: { width: 100, height: 120, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.border, borderStyle: 'dashed' },
+  lockedText: { color: Colors.white, fontSize: 11, marginTop: 4 },
+  upgradeBar: { margin: 12, backgroundColor: '#FFF8E7', borderRadius: 10, padding: 12, alignItems: 'center' },
+  upgradeText: { color: '#B8860B', fontWeight: Theme.fontWeight.bold, fontSize: 13 },
   field: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
   fieldLeft: { flex: 1 },
   fieldLabel: { fontSize: 15, fontWeight: Theme.fontWeight.semibold, color: Colors.text },
