@@ -126,10 +126,11 @@ export default function Settings() {
             Alert.alert("Age Range", "Select age range", [
               { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); } },
               { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); } },
-              { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); saveSetting("minAge", 18); saveSetting("maxAge", 25); } },
+              { text: "18 - 30", onPress: () => { setMinAge(18); setMaxAge(30); saveSetting("minAge", 18); saveSetting("maxAge", 30); } },
               { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); saveSetting("minAge", 18); saveSetting("maxAge", 40); } },
               { text: "18 - 55", onPress: () => { setMinAge(18); setMaxAge(55); saveSetting("minAge", 18); saveSetting("maxAge", 55); } },
               { text: "18 - 70", onPress: () => { setMinAge(18); setMaxAge(70); saveSetting("minAge", 18); saveSetting("maxAge", 70); } },
+              { text: "Cancel", style: "cancel" },
               { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); } },
               { text: "30 - 50", onPress: () => { setMinAge(30); setMaxAge(50); } },
               { text: "40 - 65", onPress: () => { setMinAge(40); setMaxAge(65); } },
@@ -145,7 +146,6 @@ export default function Settings() {
               { text: "25 km", onPress: () => { setDistance(25); saveSetting("distance", 25); } },
               { text: "50 km", onPress: () => { setDistance(50); saveSetting("distance", 50); } },
               { text: "100 km", onPress: () => { setDistance(100); saveSetting("distance", 100); } },
-              { text: "Worldwide", onPress: () => setDistance(999) },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
@@ -172,8 +172,8 @@ export default function Settings() {
         <Section title="Support" />
         <View style={styles.card}>
           <SettingRow icon="help-circle-outline" label="Help Center" onPress={() => Alert.alert('Help', 'Email: support@amore.com')} />
-          <SettingRow icon="document-text-outline" label="Terms of Service" onPress={() => Alert.alert('Terms', 'By using Amore you agree to our terms.')} />
-          <SettingRow icon="shield-outline" label="Privacy Policy" onPress={() => Alert.alert('Privacy', 'We protect your data.')} />
+          <SettingRow icon="document-text-outline" label="Terms of Service" onPress={() => router.push('/terms')} />
+          <SettingRow icon="shield-outline" label="Privacy Policy" onPress={() => router.push('/privacy')} />
           <SettingRow icon="star-outline" label="Rate the app" onPress={() => Alert.alert('Rate Us', 'Thank you for your support!')} />
         </View>
 

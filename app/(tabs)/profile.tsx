@@ -80,7 +80,7 @@ export default function Profile() {
       setSaving(true);
       try {
         const uri = result.assets[0].uri;
-        const url = await uploadToCloudinary(uri);
+        const url = await uploadToCloudinary(uri, user?.gender);
         const currentPhotos = [...(user.photos ?? [])];
         if (index !== undefined) {
           currentPhotos[index] = url;
@@ -247,6 +247,28 @@ export default function Profile() {
           <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('My Backpack 🎒', 'Your backpack is empty. Buy gifts and special items from the store to send to your matches!')}>
             <Ionicons name="bag-outline" size={22} color={Colors.primary} />
             <Text style={styles.menuText}>My Backpack</Text>
+            <Text style={styles.menuRight}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => {
+            Alert.alert(
+              '🎵 My Anthem',
+              user?.anthem ? `Current: ${user.anthem}` : 'Add a song that represents you!',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: '🎵 Set Anthem', onPress: () => {
+                  Alert.prompt('My Anthem', 'Enter your favorite song (Artist - Song name)', async (text) => {
+                    if (text && user) {
+                      await updateDoc(doc(db, 'users', user.id), { anthem: text });
+                      setUser({ ...user, anthem: text } as any);
+                      Alert.alert('Anthem Set! 🎵', text);
+                    }
+                  });
+                }}
+              ]
+            );
+          }}>
+            <Text style={styles.menuIcon}>🎵</Text>
+            <Text style={styles.menuText}>{(user as any)?.anthem ? (user as any).anthem : 'Add My Anthem'}</Text>
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={async () => {
