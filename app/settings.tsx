@@ -28,12 +28,15 @@ export default function Settings() {
   const [maxAge, setMaxAge] = useState((user as any)?.maxAge ?? 40);
   const [distance, setDistance] = useState((user as any)?.distance ?? 50);
 
-  const saveSetting = async (field: string, value: any) => {
+  const saveSetting = async (fields: Record<string, any>) => {
     if (!user) return;
     try {
-      await updateDoc(doc(db, 'users', user.id), { [field]: value });
-      setUser({ ...user, [field]: value } as any);
-    } catch (e) {}
+      const updated = { ...user, ...fields } as any;
+      setUser(updated);
+      await updateDoc(doc(db, 'users', user.id), fields);
+    } catch (e) {
+      console.error('Failed to save setting:', e);
+    }
   };
 
   const handleLogout = async () => {
@@ -115,37 +118,28 @@ export default function Settings() {
         <View style={styles.card}>
           <SettingRow icon="search-outline" label="Looking for" value={lookingFor} onPress={() => {
             Alert.alert("Looking For", "Who are you looking for?", [
-              { text: "Men", onPress: () => setLookingFor("Men") },
-              { text: "Women", onPress: () => setLookingFor("Women") },
-              { text: "Everyone", onPress: () => setLookingFor("Everyone") },
+              { text: "Men", onPress: () => { setLookingFor("Men"); saveSetting({lookingFor: "Men"}); } },
+              { text: "Women", onPress: () => { setLookingFor("Women"); saveSetting({lookingFor: "Women"}); } },
+              { text: "Everyone", onPress: () => { setLookingFor("Everyone"); saveSetting({lookingFor: "Everyone"}); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
 
           <SettingRow icon="people-outline" label="Age range" value={`${minAge} - ${maxAge}`} onPress={() => {
             Alert.alert("Age Range", "Select age range", [
-              { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); } },
-              { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); } },
-              { text: "18 - 30", onPress: () => { setMinAge(18); setMaxAge(30); saveSetting("minAge", 18); saveSetting("maxAge", 30); } },
-              { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); saveSetting("minAge", 18); saveSetting("maxAge", 40); } },
-              { text: "18 - 55", onPress: () => { setMinAge(18); setMaxAge(55); saveSetting("minAge", 18); saveSetting("maxAge", 55); } },
-              { text: "18 - 70", onPress: () => { setMinAge(18); setMaxAge(70); saveSetting("minAge", 18); saveSetting("maxAge", 70); } },
-              { text: "Cancel", style: "cancel" },
-              { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); } },
-              { text: "30 - 50", onPress: () => { setMinAge(30); setMaxAge(50); } },
-              { text: "40 - 65", onPress: () => { setMinAge(40); setMaxAge(65); } },
-              { text: "50 - 80", onPress: () => { setMinAge(50); setMaxAge(80); } },
+              { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); saveSetting({minAge: 18, maxAge: 25}); } },
+              { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); saveSetting({minAge: 18, maxAge: 35}); } },
+              { text: "18 - 50", onPress: () => { setMinAge(18); setMaxAge(50); saveSetting({minAge: 18, maxAge: 50}); } },
+              { text: "18 - 70", onPress: () => { setMinAge(18); setMaxAge(70); saveSetting({minAge: 18, maxAge: 70}); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
           <SettingRow icon="navigate-outline" label="Max distance" value={distance === 999 ? "Worldwide" : `${distance} km`} onPress={() => {
             Alert.alert("Max Distance", "Select max distance", [
-              { text: "10 km", onPress: () => setDistance(10) },
-              { text: "25 km", onPress: () => setDistance(25) },
-              { text: "10 km", onPress: () => { setDistance(10); saveSetting("distance", 10); } },
-              { text: "25 km", onPress: () => { setDistance(25); saveSetting("distance", 25); } },
-              { text: "50 km", onPress: () => { setDistance(50); saveSetting("distance", 50); } },
-              { text: "100 km", onPress: () => { setDistance(100); saveSetting("distance", 100); } },
+              { text: "10 km", onPress: () => { setDistance(10); saveSetting({distance: 10}); } },
+              { text: "25 km", onPress: () => { setDistance(25); saveSetting({distance: 25}); } },
+              { text: "50 km", onPress: () => { setDistance(50); saveSetting({distance: 50}); } },
+              { text: "100 km", onPress: () => { setDistance(100); saveSetting({distance: 100}); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
