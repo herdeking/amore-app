@@ -10,54 +10,26 @@ export default function PrivacyScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>‹ Back</Text>
+          <Text style={styles.back}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Privacy Policy</Text>
         <View style={{ width: 50 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.updated}>Last updated: June 2026</Text>
-
         <Text style={styles.heading}>1. Information We Collect</Text>
-        <Text style={styles.body}>We collect:{"
-"}• Name, age, gender, location{"
-"}• Profile photos and bio{"
-"}• Usage data and interactions{"
-"}• Device information{"
-"}• Payment information (processed securely by Paystack)</Text>
-
+        <Text style={styles.body}>We collect your name, age, gender, location, profile photos, bio, usage data, device information, and payment information processed securely by Paystack.</Text>
         <Text style={styles.heading}>2. How We Use Your Information</Text>
-        <Text style={styles.body}>We use your information to:{"
-"}• Show your profile to potential matches{"
-"}• Improve our matching algorithm{"
-"}• Send notifications about matches and messages{"
-"}• Process payments for VIP subscriptions{"
-"}• Ensure safety and prevent abuse</Text>
-
+        <Text style={styles.body}>We use your information to show your profile to potential matches, improve our matching algorithm, send notifications, process payments, and ensure safety.</Text>
         <Text style={styles.heading}>3. Data Sharing</Text>
-        <Text style={styles.body}>We never sell your personal data. We share limited data only with:{"
-"}• Paystack (payment processing){"
-"}• Cloudinary (photo storage){"
-"}• Firebase (database and authentication){"
-"}• Anthropic Claude AI (for AI reply features)</Text>
-
+        <Text style={styles.body}>We never sell your personal data. We share limited data only with Paystack for payments, Cloudinary for photo storage, Firebase for database, and Anthropic Claude AI for AI reply features.</Text>
         <Text style={styles.heading}>4. Photo Privacy</Text>
-        <Text style={styles.body}>Your photos are stored securely on Cloudinary. Profile photos are visible to other users. We use AI to verify that uploaded photos match your registered gender for safety purposes.</Text>
-
+        <Text style={styles.body}>Your photos are stored securely on Cloudinary. We use AI to verify that uploaded photos match your registered gender for safety purposes.</Text>
         <Text style={styles.heading}>5. Data Security</Text>
         <Text style={styles.body}>We use industry-standard encryption to protect your data. Your password is never stored in plain text. We use Firebase Authentication for secure login.</Text>
-
         <Text style={styles.heading}>6. Your Rights</Text>
-        <Text style={styles.body}>You have the right to:{"
-"}• Access your personal data{"
-"}• Delete your account and data{"
-"}• Update your information anytime{"
-"}• Opt out of notifications</Text>
-
-        <Text style={styles.heading}>7. Cookies & Analytics</Text>
-        <Text style={styles.body}>We use Firebase Analytics to improve the app experience. No third-party advertising cookies are used. Amore products are completely ad-free.</Text>
-
-        <Text style={styles.heading}>8. Contact</Text>
+        <Text style={styles.body}>You have the right to access your personal data, delete your account and data, update your information anytime, and opt out of notifications.</Text>
+        <Text style={styles.heading}>7. Contact</Text>
         <Text style={styles.body}>For privacy concerns, contact us at: privacy@amore.app</Text>
       </ScrollView>
     </SafeAreaView>
