@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
@@ -16,14 +17,24 @@ export default function Settings() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState(true);
+  const { setUser } = useAuthStore();
   const [matches, setMatches] = useState(true);
   const [messages, setMessages] = useState(true);
-  const [showOnline, setShowOnline] = useState(true);
+  const [showOnline, setShowOnline] = useState(user?.showOnline ?? true);
+  const [showDistance2, setShowDistance2] = useState(user?.showDistance ?? true);
   const [showDistance, setShowDistance] = useState(true);
   const [lookingFor, setLookingFor] = useState(user?.lookingFor ?? 'Everyone');
-  const [minAge, setMinAge] = useState(18);
-  const [maxAge, setMaxAge] = useState(40);
-  const [distance, setDistance] = useState(50);
+  const [minAge, setMinAge] = useState((user as any)?.minAge ?? 18);
+  const [maxAge, setMaxAge] = useState((user as any)?.maxAge ?? 40);
+  const [distance, setDistance] = useState((user as any)?.distance ?? 50);
+
+  const saveSetting = async (field: string, value: any) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.id), { [field]: value });
+      setUser({ ...user, [field]: value } as any);
+    } catch (e) {}
+  };
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure?', [
@@ -82,7 +93,7 @@ export default function Settings() {
         <Section title="Account" />
         <View style={styles.card}>
           <SettingRow icon="person-outline" label="Edit Profile" onPress={() => router.push('/(tabs)/profile')} />
-          <SettingRow icon="mail-outline" label="Email" value={user?.id?.slice(0, 12) + '...'} />
+          <SettingRow icon="mail-outline" label="Email" value={auth.currentUser?.email ?? 'Not set'} />
           <SettingRow icon="lock-closed-outline" label="Change Password" onPress={async () => {
           try {
             const currentUser = auth.currentUser;
@@ -115,7 +126,10 @@ export default function Settings() {
             Alert.alert("Age Range", "Select age range", [
               { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); } },
               { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); } },
-              { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); } },
+              { text: "18 - 25", onPress: () => { setMinAge(18); setMaxAge(25); saveSetting("minAge", 18); saveSetting("maxAge", 25); } },
+              { text: "18 - 40", onPress: () => { setMinAge(18); setMaxAge(40); saveSetting("minAge", 18); saveSetting("maxAge", 40); } },
+              { text: "18 - 55", onPress: () => { setMinAge(18); setMaxAge(55); saveSetting("minAge", 18); saveSetting("maxAge", 55); } },
+              { text: "18 - 70", onPress: () => { setMinAge(18); setMaxAge(70); saveSetting("minAge", 18); saveSetting("maxAge", 70); } },
               { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); } },
               { text: "30 - 50", onPress: () => { setMinAge(30); setMaxAge(50); } },
               { text: "40 - 65", onPress: () => { setMinAge(40); setMaxAge(65); } },
@@ -127,8 +141,10 @@ export default function Settings() {
             Alert.alert("Max Distance", "Select max distance", [
               { text: "10 km", onPress: () => setDistance(10) },
               { text: "25 km", onPress: () => setDistance(25) },
-              { text: "50 km", onPress: () => setDistance(50) },
-              { text: "100 km", onPress: () => setDistance(100) },
+              { text: "10 km", onPress: () => { setDistance(10); saveSetting("distance", 10); } },
+              { text: "25 km", onPress: () => { setDistance(25); saveSetting("distance", 25); } },
+              { text: "50 km", onPress: () => { setDistance(50); saveSetting("distance", 50); } },
+              { text: "100 km", onPress: () => { setDistance(100); saveSetting("distance", 100); } },
               { text: "Worldwide", onPress: () => setDistance(999) },
               { text: "Cancel", style: "cancel" },
             ]);
