@@ -89,8 +89,11 @@ export default function Profile() {
           currentPhotos.push(url);
         }
         const newPhotos = currentPhotos.slice(0, maxPhotos);
+        console.log('Saving photos to Firebase:', newPhotos);
         await updateDoc(doc(db, 'users', user.id), { photos: newPhotos });
-        setUser({ ...user, photos: newPhotos });
+        const updatedUser = { ...user, photos: newPhotos };
+        setUser(updatedUser as any);
+        console.log('Photos saved successfully:', newPhotos.length);
       } catch (e: any) {
         Alert.alert('Upload Error', e.message);
       } finally {
