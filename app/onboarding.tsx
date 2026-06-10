@@ -34,7 +34,7 @@ export default function Onboarding() {
   };
 
   const uploadPhoto = async (uri: string, index: number): Promise<string> => {
-    return await uploadToCloudinary(uri, gender);
+    return await uploadToCloudinary(uri);
   };
 
   const saveProfile = async () => {

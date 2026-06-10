@@ -20,8 +20,8 @@ export default function Settings() {
   const { setUser } = useAuthStore();
   const [matches, setMatches] = useState(true);
   const [messages, setMessages] = useState(true);
-  const [showOnline, setShowOnline] = useState(user?.showOnline ?? true);
-  const [showDistance2, setShowDistance2] = useState(user?.showDistance ?? true);
+  const [showOnline, setShowOnline] = useState(true);
+  const [showDistance2, setShowDistance2] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
   const [lookingFor, setLookingFor] = useState(user?.lookingFor ?? 'Everyone');
   const [minAge, setMinAge] = useState((user as any)?.minAge ?? 18);

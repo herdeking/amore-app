@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
-  ScrollView, Image, ActivityIndicator
+  ScrollView, Image, ActivityIndicator, Modal, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -82,7 +81,7 @@ export default function Profile() {
       setSaving(true);
       try {
         const uri = result.assets[0].uri;
-        const url = await uploadToCloudinary(uri, user?.gender);
+        const url = await uploadToCloudinary(uri);
         const currentPhotos = [...(user.photos ?? [])];
         if (index !== undefined) {
           currentPhotos[index] = url;
