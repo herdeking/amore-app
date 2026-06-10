@@ -57,6 +57,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [savingBanner, setSavingBanner] = useState(false);
   const [editField, setEditField] = useState<string | null>(null);
+  const [showAnthemModal, setShowAnthemModal] = useState(false);
+  const [anthemText, setAnthemText] = useState('');
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure?', [
@@ -250,22 +252,8 @@ export default function Profile() {
             <Text style={styles.menuRight}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => {
-            Alert.alert(
-              '🎵 My Anthem',
-              user?.anthem ? `Current: ${user.anthem}` : 'Add a song that represents you!',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: '🎵 Set Anthem', onPress: () => {
-                  Alert.prompt('My Anthem', 'Enter your favorite song (Artist - Song name)', async (text) => {
-                    if (text && user) {
-                      await updateDoc(doc(db, 'users', user.id), { anthem: text });
-                      setUser({ ...user, anthem: text } as any);
-                      Alert.alert('Anthem Set! 🎵', text);
-                    }
-                  });
-                }}
-              ]
-            );
+            setAnthemText((user as any)?.anthem ?? '');
+            setShowAnthemModal(true);
           }}>
             <Text style={styles.menuIcon}>🎵</Text>
             <Text style={styles.menuText}>{(user as any)?.anthem ? (user as any).anthem : 'Add My Anthem'}</Text>
@@ -355,6 +343,76 @@ export default function Profile() {
           <Field label="Children" field="children" value={user?.children} />
         </View>
       </ScrollView>
+
+      {/* Anthem Modal */}
+      <Modal visible={showAnthemModal} transparent animationType="slide">
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' }}>🎵 My Anthem</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 16 }}
+              placeholder="Artist - Song name (e.g. Burna Boy - Last Last)"
+              value={anthemText}
+              onChangeText={setAnthemText}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={{ backgroundColor: '#FF4B6E', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 8 }}
+              onPress={async () => {
+                if (anthemText.trim() && user) {
+                  await updateDoc(doc(db, 'users', user.id), { anthem: anthemText.trim() });
+                  setUser({ ...user, anthem: anthemText.trim() } as any);
+                  setShowAnthemModal(false);
+                  Alert.alert('Anthem Set! 🎵', anthemText.trim());
+                }
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Save Anthem</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ padding: 14, alignItems: 'center' }}
+              onPress={() => setShowAnthemModal(false)}
+            >
+              <Text style={{ color: '#999', fontSize: 16 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Anthem Modal */}
+      <Modal visible={showAnthemModal} transparent animationType="slide">
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' }}>🎵 My Anthem</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 16 }}
+              placeholder="Artist - Song name (e.g. Burna Boy - Last Last)"
+              value={anthemText}
+              onChangeText={setAnthemText}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={{ backgroundColor: '#FF4B6E', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 8 }}
+              onPress={async () => {
+                if (anthemText.trim() && user) {
+                  await updateDoc(doc(db, 'users', user.id), { anthem: anthemText.trim() });
+                  setUser({ ...user, anthem: anthemText.trim() } as any);
+                  setShowAnthemModal(false);
+                  Alert.alert('Anthem Set! 🎵', anthemText.trim());
+                }
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Save Anthem</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ padding: 14, alignItems: 'center' }}
+              onPress={() => setShowAnthemModal(false)}
+            >
+              <Text style={{ color: '#999', fontSize: 16 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Edit Modal */}
       {editField && (

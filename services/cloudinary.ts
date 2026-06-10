@@ -17,7 +17,6 @@ export const uploadToCloudinary = async (uri: string, userGender?: string): Prom
         body: JSON.stringify({
           file: `data:image/jpeg;base64,${base64}`,
           upload_preset: UPLOAD_PRESET,
-          public_id: `amore_${Date.now()}`,
         }),
       }
     );
