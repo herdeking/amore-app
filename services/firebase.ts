@@ -1,8 +1,10 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+// @ts-ignore - getReactNativePersistence exists in the React Native build at runtime
+import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMEzHwG5NCx-4Sr-rCnFAGrFlWLrLsmOc",
@@ -14,9 +16,19 @@ const firebaseConfig = {
   databaseURL: "https://amore-dating-9b956-default-rtdb.firebaseio.com",
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const auth = getAuth(app);
+let authInstance;
+try {
+  authInstance = initializeAuth(app, {
+    // @ts-ignore
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch (e) {
+  authInstance = getAuth(app);
+}
+
+export const auth = authInstance;
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const rtdb = getDatabase(app);

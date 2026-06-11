@@ -309,7 +309,7 @@ export default function Profile() {
               </TouchableOpacity>
             ))}
             {(user?.photos?.length ?? 0) < (user?.isPremium ? 6 : 2) && (
-              <TouchableOpacity style={styles.addPhotoCell} onPress={() => pickPhoto(0)}>
+              <TouchableOpacity style={styles.addPhotoCell} onPress={() => pickPhoto()}>
                 <Ionicons name="add" size={32} color={Colors.white} />
                 <Text style={styles.addPhotoCellText}>Add</Text>
               </TouchableOpacity>

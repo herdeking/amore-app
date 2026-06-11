@@ -16,6 +16,8 @@ export const uploadToCloudinary = async (uri: string): Promise<string> => {
       body: JSON.stringify({
         file: `data:image/jpeg;base64,${base64}`,
         upload_preset: UPLOAD_PRESET,
+        use_filename: false,
+        unique_filename: true,
       }),
     }
   );
