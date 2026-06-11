@@ -11,6 +11,7 @@ export const useAuth = () => {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        setLoading(true);
         if (firebaseUser) {
           setFirebaseUid(firebaseUser.uid);
           try {

@@ -76,14 +76,22 @@ export default function Login() {
           autoCapitalize="none"
           placeholderTextColor="#999"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#999"
-        />
+        <View style={{ position: 'relative', justifyContent: 'center' }}>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            placeholderTextColor="#999"
+          />
+          <TouchableOpacity
+            style={{ position: 'absolute', right: 16 }}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Text style={{ fontSize: 18 }}>{showPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
           onPress={mode === 'login' ? handleLogin : handleRegister}
