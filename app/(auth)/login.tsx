@@ -4,7 +4,7 @@ import {
   TextInput, Alert, Dimensions, Image, ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously} from 'firebase/auth';
 import { auth } from '../../services/firebase';
 
 const { width, height } = Dimensions.get('window');
@@ -55,8 +55,15 @@ export default function Login() {
     }
   };
 
-  const handleGuest = () => {
-    Alert.alert('Guest Login', 'Guest mode coming soon!');
+  const handleGuest = async () => {
+    setLoading(true);
+    try {
+      await signInAnonymously(auth);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (mode === 'login' || mode === 'register') {
