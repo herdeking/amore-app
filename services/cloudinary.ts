@@ -8,8 +8,6 @@ export const uploadToCloudinary = async (uri: string): Promise<string> => {
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  const uniqueId = Date.now().toString();
-
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
     {
@@ -18,7 +16,6 @@ export const uploadToCloudinary = async (uri: string): Promise<string> => {
       body: JSON.stringify({
         file: `data:image/jpeg;base64,${base64}`,
         upload_preset: UPLOAD_PRESET,
-        public_id: `amore_${uniqueId}`,
       }),
     }
   );
