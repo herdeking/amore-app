@@ -5,7 +5,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useSwipe } from '../../hooks/useSwipe';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
@@ -15,6 +19,8 @@ const { width: SW, height: SH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SW * 0.3;
 
 export default function SwipeScreen() {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const { profiles, swipe, matched, matchedUser, dismissMatch } = useSwipe();
   useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,6 +54,18 @@ export default function SwipeScreen() {
       else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     },
   });
+
+  const reportUser = async (targetId: string | undefined, reason: 'reported' | 'blocked') => {
+    if (!targetId || !user?.id) return;
+    try {
+      await addDoc(collection(db, 'reports'), {
+        reporterId: user.id,
+        reportedId: targetId,
+        reason,
+        createdAt: new Date().toISOString(),
+      });
+    } catch {}
+  };
 
   const handleSwipe = (action: 'like' | 'pass' | 'superlike') => {
     const target = profiles[currentIndex];
@@ -176,6 +194,26 @@ export default function SwipeScreen() {
               <TouchableOpacity style={styles.closeProfileBtn} onPress={() => setShowProfile(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.reportProfileBtn}
+                onPress={() => {
+                  Alert.alert('Report or Block', `What would you like to do with ${current?.name}?`, [
+                    { text: 'Report', onPress: () => {
+                      Alert.alert('Reported', `${current?.name} has been reported. Our team will review this.`);
+                      reportUser(current?.id, 'reported');
+                    }},
+                    { text: 'Block', style: 'destructive', onPress: () => {
+                      Alert.alert('Blocked', `${current?.name} has been blocked and won't appear again.`);
+                      reportUser(current?.id, 'blocked');
+                      setShowProfile(false);
+                      handleSwipe('pass');
+                    }},
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
+              >
+                <Ionicons name="ellipsis-vertical" size={22} color="#fff" />
+              </TouchableOpacity>
             </View>
             <View style={{ padding: 20 }}>
               <View style={styles.profileHeaderRow}>
@@ -241,6 +279,18 @@ export default function SwipeScreen() {
                   <Text style={[styles.modalActionText, { color: '#fff' }]}>Like</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Message button */}
+              <TouchableOpacity
+                style={styles.modalMessageBtn}
+                onPress={() => {
+                  setShowProfile(false);
+                  if (current?.id) router.push(`/chat/${current.id}`);
+                }}
+              >
+                <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
+                <Text style={styles.modalMessageBtnText}>Send a Message</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -321,6 +371,9 @@ const styles = StyleSheet.create({
   modalFollowBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: Colors.primary },
   modalLikeBtn: { backgroundColor: Colors.primary },
   modalActionText: { fontSize: 15, fontWeight: Theme.fontWeight.bold },
+  modalMessageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 30, backgroundColor: '#FFE5EA', marginBottom: 30 },
+  modalMessageBtnText: { fontSize: 15, fontWeight: Theme.fontWeight.bold, color: Colors.primary },
+  reportProfileBtn: { position: 'absolute', top: 50, left: 20, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 },
   closeProfileBtn: { position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 },
   profileName: { fontSize: 26, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 4 },
   profileLocation: { fontSize: 15, color: Colors.textLight, marginBottom: 12 },

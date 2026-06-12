@@ -6,9 +6,24 @@ export const fetchProfiles = async (currentUserId: string): Promise<User[]> => {
   try {
     const snap = await getDocs(collection(db, 'users'));
     const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
-    console.log('Total users in Firestore:', allUsers.length);
-    const filtered = allUsers.filter(u => u.id !== currentUserId && (u.photos?.length ?? 0) > 0);
-    console.log('Users with photos (excluding self):', filtered.length);
+
+    // Get blocked user IDs
+    let blockedIds: string[] = [];
+    try {
+      const reportsQ = query(
+        collection(db, 'reports'),
+        where('reporterId', '==', currentUserId),
+        where('reason', '==', 'blocked')
+      );
+      const reportsSnap = await getDocs(reportsQ);
+      blockedIds = reportsSnap.docs.map(d => d.data().reportedId);
+    } catch {}
+
+    const filtered = allUsers.filter(u =>
+      u.id !== currentUserId &&
+      (u.photos?.length ?? 0) > 0 &&
+      !blockedIds.includes(u.id)
+    );
     return filtered;
   } catch (e) {
     return [];

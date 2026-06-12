@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { getProfileViewers } from '../../services/profileViews';
+import { fetchWhoLikedMe } from '../../services/likesService';
+import { recordSwipe } from '../../services/swipeService';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 
@@ -31,6 +33,22 @@ export default function LikesScreen() {
   const [tab, setTab] = useState<"likes" | "viewers">("likes");
   const isPremium = user?.isPremium ?? false;
   const freeViewLimit = 3;
+  const [realLikes, setRealLikes] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchWhoLikedMe(user.id).then(users => {
+      setRealLikes(users.map(u => ({
+        id: u.id,
+        name: u.name || 'Unknown',
+        age: u.age ?? 0,
+        photo: u.photos?.[0] ?? 'https://randomuser.me/api/portraits/lego/1.jpg',
+        location: u.location ?? '',
+      })));
+    });
+  }, [user?.id]);
+
+  const likesData = [...realLikes, ...DEMO_LIKES];
 
   const renderCard = (item: any, isViewer = false) => {
     const isHidden = isViewer && !isPremium && parseInt(item.id.replace("v","")) > freeViewLimit;
@@ -61,7 +79,25 @@ export default function LikesScreen() {
           {!isHidden && <Text style={styles.location}>📍 {item.location}</Text>}
         </View>
         {!isHidden && (
-          <TouchableOpacity style={styles.likeBtn} onPress={() => router.push(`/chat/${item.id}`)}>
+          <TouchableOpacity
+            style={styles.likeBtn}
+            onPress={async () => {
+              if (isViewer) {
+                router.push(`/chat/${item.id}`);
+                return;
+              }
+              if (!user?.id) return;
+              const result = await recordSwipe({ userId: user.id, targetId: item.id, action: 'like' });
+              if (result.matched) {
+                Alert.alert("It's a Match! 🎉", `You and ${item.name} liked each other!`, [
+                  { text: 'Send Message', onPress: () => router.push(`/chat/${item.id}`) },
+                  { text: 'OK' },
+                ]);
+              } else {
+                Alert.alert('Liked! ❤️', `You liked ${item.name}'s profile`);
+              }
+            }}
+          >
             <Text style={styles.likeBtnText}>{isViewer ? "💬 Chat" : "❤️ Like Back"}</Text>
           </TouchableOpacity>
         )}
@@ -76,7 +112,7 @@ export default function LikesScreen() {
       {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity style={[styles.tab, tab === "likes" && styles.tabActive]} onPress={() => setTab("likes")}>
-          <Text style={[styles.tabText, tab === "likes" && styles.tabTextActive]}>❤️ Liked You ({DEMO_LIKES.length})</Text>
+          <Text style={[styles.tabText, tab === "likes" && styles.tabTextActive]}>❤️ Liked You ({likesData.length})</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.tab, tab === "viewers" && styles.tabActive]} onPress={() => setTab("viewers")}>
           <Text style={[styles.tabText, tab === "viewers" && styles.tabTextActive]}>👀 Viewed Me ({isPremium ? DEMO_VIEWERS.length : freeViewLimit + "+"})</Text>
@@ -90,7 +126,7 @@ export default function LikesScreen() {
       )}
 
       <FlatList
-        data={tab === "likes" ? DEMO_LIKES : DEMO_VIEWERS}
+        data={tab === "likes" ? likesData : DEMO_VIEWERS}
         numColumns={2}
         keyExtractor={i => i.id}
         contentContainerStyle={styles.grid}
