@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, PanResponder,
-  Image, TouchableOpacity, Dimensions, ActivityIndicator
+  Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useLocation } from '../../hooks/useLocation';
@@ -18,6 +19,7 @@ export default function SwipeScreen() {
   useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [showProfile, setShowProfile] = useState(false);
   const position = useRef(new Animated.ValueXY()).current;
 
   const rotate = position.x.interpolate({
@@ -139,10 +141,12 @@ export default function SwipeScreen() {
           </Animated.View>
 
           {/* Info */}
-          <View style={styles.cardInfo}>
+          <TouchableOpacity style={styles.cardInfo} onPress={() => setShowProfile(true)} activeOpacity={0.9}>
             <View style={styles.cardNameRow}>
               <Text style={styles.cardName}>{current?.name}, {current?.age}</Text>
               <View style={styles.onlineDot} />
+              <View style={{ flex: 1 }} />
+              <Ionicons name="information-circle-outline" size={26} color="#fff" />
             </View>
             {current?.location && (
               <Text style={styles.cardLocation}>📍 {current.location}</Text>
@@ -159,9 +163,47 @@ export default function SwipeScreen() {
                 ))}
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         </Animated.View>
       </View>
+
+      {/* Profile Detail Modal */}
+      <Modal visible={showProfile} animationType="slide" onRequestClose={() => setShowProfile(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <ScrollView>
+            <View style={{ position: 'relative' }}>
+              <Image source={{ uri: current?.photos?.[0] }} style={{ width: '100%', height: 400 }} />
+              <TouchableOpacity style={styles.closeProfileBtn} onPress={() => setShowProfile(false)}>
+                <Ionicons name="close" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ padding: 20 }}>
+              <Text style={styles.profileName}>{current?.name}, {current?.age}</Text>
+              {current?.location && <Text style={styles.profileLocation}>📍 {current.location}</Text>}
+              {current?.bio && <Text style={styles.profileBio}>{current.bio}</Text>}
+              {(current?.interests?.length ?? 0) > 0 && (
+                <View style={[styles.tags, { marginTop: 12 }]}>
+                  {(current?.interests ?? []).map(tag => (
+                    <View key={tag} style={[styles.tag, { backgroundColor: '#FFE5EA' }]}>
+                      <Text style={[styles.tagText, { color: Colors.primary }]}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {(current?.photos?.length ?? 0) > 1 && (
+                <View style={{ marginTop: 20 }}>
+                  <Text style={styles.morePhotosTitle}>More Photos</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {current?.photos?.slice(1).map((p, i) => (
+                      <Image key={i} source={{ uri: p }} style={styles.morePhoto} />
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       {/* Action buttons */}
       <View style={styles.actions}>
@@ -232,6 +274,12 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, color: Colors.textLight },
   resetBtn: { backgroundColor: Colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, marginTop: 8 },
   resetText: { color: Colors.white, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
+  closeProfileBtn: { position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 },
+  profileName: { fontSize: 26, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 4 },
+  profileLocation: { fontSize: 15, color: Colors.textLight, marginBottom: 12 },
+  profileBio: { fontSize: 15, color: Colors.text, lineHeight: 22 },
+  morePhotosTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 10 },
+  morePhoto: { width: 120, height: 160, borderRadius: 12, marginRight: 10 },
   matchModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,75,110,0.96)', alignItems: 'center', justifyContent: 'center', padding: 32 },
   matchTitle: { fontSize: 32, fontWeight: Theme.fontWeight.bold, color: Colors.white, marginBottom: 8 },
   matchSub: { fontSize: 16, color: 'rgba(255,255,255,0.9)', marginBottom: 24, textAlign: 'center' },
