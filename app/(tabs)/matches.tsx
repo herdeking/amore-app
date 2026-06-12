@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
+import AdBanner from '../../components/AdBanner';
 
 const DEMO_MATCHES = [
   { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 2, online: true },
@@ -167,6 +168,7 @@ export default function MatchesScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
       )}
+      <AdBanner />
     </SafeAreaView>
   );
 }
