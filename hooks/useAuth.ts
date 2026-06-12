@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
+import { registerForPushNotifications } from '../services/notifications';
 
 export const useAuth = () => {
   const { setUser, setFirebaseUid, setLoading, firebaseUid } = useAuthStore();
@@ -21,6 +22,7 @@ export const useAuth = () => {
             } else {
               setUser({ id: firebaseUser.uid, name: '', photos: [] });
             }
+            registerForPushNotifications(firebaseUser.uid).catch(() => {});
           } catch {
             setUser({ id: firebaseUser.uid, name: '', photos: [] });
           }

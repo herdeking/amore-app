@@ -72,11 +72,25 @@ export default function Profile() {
   const maxPhotos = user?.isPremium ? 6 : 2;
 
   const pickPhoto = async (index?: number) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsMultipleSelection: false,
-    });
+    Alert.alert('Add Photo', 'Choose photo source', [
+      { text: 'Camera', onPress: () => doPickPhoto(index, true) },
+      { text: 'Gallery', onPress: () => doPickPhoto(index, false) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const doPickPhoto = async (index: number | undefined, useCamera: boolean) => {
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({
+          quality: 0.8,
+          allowsEditing: true,
+          aspect: [3, 4],
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+          allowsMultipleSelection: false,
+        });
     if (!result.canceled && user) {
       setSaving(true);
       try {
