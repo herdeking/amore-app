@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, PanResponder,
-  Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView
+  Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -178,8 +178,24 @@ export default function SwipeScreen() {
               </TouchableOpacity>
             </View>
             <View style={{ padding: 20 }}>
-              <Text style={styles.profileName}>{current?.name}, {current?.age}</Text>
-              {current?.location && <Text style={styles.profileLocation}>📍 {current.location}</Text>}
+              <View style={styles.profileHeaderRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.profileName}>{current?.name}, {current?.age}</Text>
+                  {current?.location && <Text style={styles.profileLocation}>📍 {current.location}</Text>}
+                </View>
+                <TouchableOpacity
+                  style={styles.callIconBtn}
+                  onPress={() => Alert.alert('Voice Call 📞', `Calling ${current?.name}... (Feature coming soon)`)}
+                >
+                  <Ionicons name="call-outline" size={22} color={Colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.callIconBtn}
+                  onPress={() => Alert.alert('Video Call 📹', `Video calling ${current?.name}... (Feature coming soon)`)}
+                >
+                  <Ionicons name="videocam-outline" size={22} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
               {current?.bio && <Text style={styles.profileBio}>{current.bio}</Text>}
               {(current?.interests?.length ?? 0) > 0 && (
                 <View style={[styles.tags, { marginTop: 12 }]}>
@@ -200,6 +216,31 @@ export default function SwipeScreen() {
                   </ScrollView>
                 </View>
               )}
+
+              {/* Action buttons */}
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalActionBtn, styles.modalPassBtn]}
+                  onPress={() => { setShowProfile(false); handleSwipe('pass'); }}
+                >
+                  <Ionicons name="close" size={24} color="#FF6B6B" />
+                  <Text style={[styles.modalActionText, { color: '#FF6B6B' }]}>Pass</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalActionBtn, styles.modalFollowBtn]}
+                  onPress={() => Alert.alert('Followed', `You are now following ${current?.name}`)}
+                >
+                  <Ionicons name="person-add-outline" size={22} color={Colors.primary} />
+                  <Text style={[styles.modalActionText, { color: Colors.primary }]}>Follow</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalActionBtn, styles.modalLikeBtn]}
+                  onPress={() => { setShowProfile(false); handleSwipe('like'); }}
+                >
+                  <Ionicons name="heart" size={24} color="#fff" />
+                  <Text style={[styles.modalActionText, { color: '#fff' }]}>Like</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -274,9 +315,17 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, color: Colors.textLight },
   resetBtn: { backgroundColor: Colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, marginTop: 8 },
   resetText: { color: Colors.white, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 20 },
+  modalActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 30 },
+  modalPassBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: '#FF6B6B' },
+  modalFollowBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: Colors.primary },
+  modalLikeBtn: { backgroundColor: Colors.primary },
+  modalActionText: { fontSize: 15, fontWeight: Theme.fontWeight.bold },
   closeProfileBtn: { position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 },
   profileName: { fontSize: 26, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 4 },
   profileLocation: { fontSize: 15, color: Colors.textLight, marginBottom: 12 },
+  profileHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  callIconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFE5EA', alignItems: 'center', justifyContent: 'center' },
   profileBio: { fontSize: 15, color: Colors.text, lineHeight: 22 },
   morePhotosTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 10 },
   morePhoto: { width: 120, height: 160, borderRadius: 12, marginRight: 10 },
