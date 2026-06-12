@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 const CLOUD_NAME = 'danwexfev';
-const UPLOAD_PRESET = 'Display_name';
+const UPLOAD_PRESET = 'ml_default';
 
 export const uploadToCloudinary = async (uri: string): Promise<string> => {
   const base64 = await FileSystem.readAsStringAsync(uri, {
