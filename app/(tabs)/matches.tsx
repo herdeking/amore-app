@@ -8,6 +8,9 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import AdBanner from '../../components/AdBanner';
+import { useAuthStore } from '../../store/authStore';
+import { fetchMatches, MatchWithUser } from '../../services/matchesService';
+import { useEffect } from 'react';
 
 const DEMO_MATCHES = [
   { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 2, online: true },
@@ -35,10 +38,30 @@ const DEMO_CALLS = [
 
 export default function MatchesScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"messages" | "friends" | "calls">("messages");
+  const [realMatches, setRealMatches] = useState<MatchWithUser[]>([]);
 
-  const filtered = DEMO_MATCHES.filter(m =>
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMatches(user.id).then(setRealMatches);
+  }, [user?.id]);
+
+  const combinedMatches = [
+    ...realMatches.map(m => ({
+      id: m.matchId,
+      name: m.user.name || 'Unknown',
+      photo: m.user.photos?.[0] ?? 'https://randomuser.me/api/portraits/lego/1.jpg',
+      lastMessage: m.lastMessage ?? 'Say hello! 👋',
+      time: m.lastMessageTime ? new Date(m.lastMessageTime).toLocaleDateString() : 'New match',
+      unread: m.unread,
+      online: false,
+    })),
+    ...DEMO_MATCHES,
+  ];
+
+  const filtered = combinedMatches.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -56,8 +79,8 @@ export default function MatchesScreen() {
       <View style={styles.tabs}>
         <TouchableOpacity style={[styles.tab, tab === "messages" && styles.tabActive]} onPress={() => setTab("messages")}>
           <Text style={[styles.tabText, tab === "messages" && styles.tabTextActive]}>Messages</Text>
-          {DEMO_MATCHES.filter(m => m.unread > 0).length > 0 && (
-            <View style={styles.badge}><Text style={styles.badgeText}>{DEMO_MATCHES.filter(m => m.unread > 0).length}</Text></View>
+          {combinedMatches.filter(m => m.unread > 0).length > 0 && (
+            <View style={styles.badge}><Text style={styles.badgeText}>{combinedMatches.filter(m => m.unread > 0).length}</Text></View>
           )}
         </TouchableOpacity>
         <TouchableOpacity style={[styles.tab, tab === "friends" && styles.tabActive]} onPress={() => setTab("friends")}>

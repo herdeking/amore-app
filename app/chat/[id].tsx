@@ -11,6 +11,8 @@ import { sendGift, GIFTS } from '../../services/gifts';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { recordProfileView } from '../../services/profileViews';
+import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
+import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 
@@ -31,21 +33,42 @@ export default function ChatScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [showGifts, setShowGifts] = useState(false);
   const [translatedMsgs, setTranslatedMsgs] = useState<Record<string, string>>({});
+  const [otherUser, setOtherUser] = useState<any>(null);
+  const isRealMatch = !id?.startsWith('1') && !id?.startsWith('2') && !id?.startsWith('3') && !id?.startsWith('4') && !id?.startsWith('5') && !id?.startsWith('6') && !id?.startsWith('7') && !id?.startsWith('8') && id?.length > 10;
 
-  const matchName = 'Sonia';
-  const matchProfile = { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
-  const matchPhoto = 'https://randomuser.me/api/portraits/women/1.jpg';
+  useEffect(() => {
+    if (!isRealMatch || !user?.id || !id) return;
+
+    getOtherUserInMatch(id, user.id).then(setOtherUser);
+
+    const unsub = subscribeToMessages(id, (msgs) => {
+      if (msgs.length > 0) {
+        setMessages(msgs as any);
+      }
+    });
+    return () => unsub();
+  }, [id, user?.id]);
+
+  const matchName = otherUser?.name ?? 'Sonia';
+  const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
+  const matchPhoto = otherUser?.photos?.[0] ?? 'https://randomuser.me/api/portraits/women/1.jpg';
   const isOnline = true;
 
   const send = () => {
     if (!text.trim()) return;
-    const msg = {
-      id: Date.now().toString(),
-      senderId: user?.id ?? 'me',
-      text: text.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, msg]);
+    const messageText = text.trim();
+
+    if (isRealMatch && user?.id && id) {
+      sendMessage(id, user.id, messageText).catch(() => {});
+    } else {
+      const msg = {
+        id: Date.now().toString(),
+        senderId: user?.id ?? 'me',
+        text: messageText,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, msg]);
+    }
     setText('');
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
