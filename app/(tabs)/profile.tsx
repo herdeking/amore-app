@@ -304,8 +304,23 @@ export default function Profile() {
           </View>
           <View style={styles.photoGrid}>
             {(user?.photos ?? []).map((uri, i) => (
-              <TouchableOpacity key={i} style={styles.photoCell}>
+              <TouchableOpacity
+                key={i}
+                style={styles.photoCell}
+                onPress={() => {
+                  Alert.alert('Photo Options', 'What would you like to do?', [
+                    { text: 'Replace', onPress: () => pickPhoto(i) },
+                    { text: 'Delete', style: 'destructive', onPress: () => removePhoto(i) },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
+              >
                 <Image source={{ uri }} style={styles.gridPhoto} />
+                {i === 0 && (
+                  <View style={styles.mainPhotoBadge}>
+                    <Text style={styles.mainPhotoBadgeText}>Main</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
             {(user?.photos?.length ?? 0) < (user?.isPremium ? 6 : 2) && (
@@ -505,7 +520,9 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 16 },
   photoCount: { fontSize: 13, color: Colors.textLight, padding: 16 },
 
-  photoCell: { width: 100, height: 120, borderRadius: 12, overflow: 'hidden' },
+  photoCell: { width: 100, height: 120, borderRadius: 12, overflow: 'hidden', position: 'relative' },
+  mainPhotoBadge: { position: 'absolute', bottom: 4, left: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  mainPhotoBadgeText: { color: Colors.white, fontSize: 10, fontWeight: Theme.fontWeight.bold },
   gridPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
   addPhotoCell: { width: 100, height: 120, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   addPhotoCellText: { color: Colors.white, fontSize: 13, marginTop: 4, fontWeight: Theme.fontWeight.bold },
