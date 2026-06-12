@@ -5,9 +5,11 @@ import { User, Match, SwipeAction } from '../types';
 export const fetchProfiles = async (currentUserId: string): Promise<User[]> => {
   try {
     const snap = await getDocs(collection(db, 'users'));
-    return snap.docs
-      .map(d => ({ id: d.id, ...d.data() } as User))
-      .filter(u => u.id !== currentUserId && u.photos?.length > 0);
+    const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
+    console.log('Total users in Firestore:', allUsers.length);
+    const filtered = allUsers.filter(u => u.id !== currentUserId && (u.photos?.length ?? 0) > 0);
+    console.log('Users with photos (excluding self):', filtered.length);
+    return filtered;
   } catch (e) {
     return [];
   }
