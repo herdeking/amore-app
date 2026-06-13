@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSwipe } from '../../hooks/useSwipe';
-import { collection, addDoc } from 'firebase/firestore';
+import { getOrCreateMatch } from '../../services/swipeService';
+import { collection, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
@@ -266,7 +267,14 @@ export default function SwipeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalActionBtn, styles.modalFollowBtn]}
-                  onPress={() => Alert.alert('Followed', `You are now following ${current?.name}`)}
+                  onPress={async () => {
+                    if (!current?.id || !user?.id) return;
+                    try {
+                      await updateDoc(doc(db, 'users', current.id), { followersCount: increment(1) });
+                      await updateDoc(doc(db, 'users', user.id), { followingCount: increment(1) });
+                      Alert.alert('Followed', `You are now following ${current?.name}`);
+                    } catch {}
+                  }}
                 >
                   <Ionicons name="person-add-outline" size={22} color={Colors.primary} />
                   <Text style={[styles.modalActionText, { color: Colors.primary }]}>Follow</Text>
@@ -283,9 +291,11 @@ export default function SwipeScreen() {
               {/* Message button */}
               <TouchableOpacity
                 style={styles.modalMessageBtn}
-                onPress={() => {
+                onPress={async () => {
                   setShowProfile(false);
-                  if (current?.id) router.push(`/chat/${current.id}`);
+                  if (!current?.id || !user?.id) return;
+                  const matchId = await getOrCreateMatch(user.id, current.id);
+                  router.push(`/chat/${matchId}`);
                 }}
               >
                 <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />

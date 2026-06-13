@@ -59,3 +59,23 @@ export const recordSwipe = async (action: SwipeAction): Promise<{ matched: boole
     return { matched: false };
   }
 };
+
+export const getOrCreateMatch = async (userId: string, targetId: string): Promise<string> => {
+  try {
+    const q = query(
+      collection(db, 'matches'),
+      where('users', 'array-contains', userId)
+    );
+    const snap = await getDocs(q);
+    const existing = snap.docs.find(d => (d.data().users as string[]).includes(targetId));
+    if (existing) return existing.id;
+
+    const matchRef = await addDoc(collection(db, 'matches'), {
+      users: [userId, targetId],
+      createdAt: new Date().toISOString(),
+    });
+    return matchRef.id;
+  } catch (e) {
+    return targetId;
+  }
+};
