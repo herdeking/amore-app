@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
 import { registerForPushNotifications } from '../services/notifications';
+import { checkAndShowNotifications } from '../services/notificationActivity';
 
 export const useAuth = () => {
   const { setUser, setFirebaseUid, setLoading, firebaseUid } = useAuthStore();
@@ -23,6 +24,7 @@ export const useAuth = () => {
               setUser({ id: firebaseUser.uid, name: '', photos: [] });
             }
             registerForPushNotifications(firebaseUser.uid).catch(() => {});
+            checkAndShowNotifications(firebaseUser.uid).catch(() => {});
           } catch {
             setUser({ id: firebaseUser.uid, name: '', photos: [] });
           }

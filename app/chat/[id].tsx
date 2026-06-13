@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  FlatList, Image, KeyboardAvoidingView, Platform, Alert
+  FlatList, Image, KeyboardAvoidingView, Platform, Alert, Modal, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { sendGift, GIFTS } from '../../services/gifts';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { recordProfileView } from '../../services/profileViews';
+import { sendLocalNotification } from '../../services/notifications';
 import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
 import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
@@ -35,6 +36,7 @@ export default function ChatScreen() {
   const [translatedMsgs, setTranslatedMsgs] = useState<Record<string, string>>({});
   const [otherUser, setOtherUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(false);
+  const [showChatProfile, setShowChatProfile] = useState(false);
   const isRealMatch = !id?.startsWith('1') && !id?.startsWith('2') && !id?.startsWith('3') && !id?.startsWith('4') && !id?.startsWith('5') && !id?.startsWith('6') && !id?.startsWith('7') && !id?.startsWith('8') && id?.length > 10;
 
   useEffect(() => {
@@ -47,8 +49,16 @@ export default function ChatScreen() {
 
     setMessages([]); // clear demo messages for real matches
 
+    let isFirstLoad = true;
     const unsub = subscribeToMessages(id, (msgs) => {
+      if (!isFirstLoad && msgs.length > messages.length) {
+        const newest = msgs[msgs.length - 1];
+        if (newest.senderId !== user?.id) {
+          sendLocalNotification(`${matchName} 💬`, newest.text);
+        }
+      }
       setMessages(msgs as any);
+      isFirstLoad = false;
     });
     return () => unsub();
   }, [id, user?.id]);
@@ -192,13 +202,15 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Image source={{ uri: matchPhoto }} style={styles.headerAvatar} />
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>{matchName}</Text>
-          <Text style={[styles.headerStatus, isOnline && styles.busy]}>
-            {isOnline ? '● Busy' : '● Offline'}
-          </Text>
-        </View>
+        <TouchableOpacity onPress={() => setShowChatProfile(true)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <Image source={{ uri: matchPhoto }} style={styles.headerAvatar} />
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerName}>{matchName}</Text>
+            <Text style={[styles.headerStatus, isOnline && styles.busy]}>
+              {isOnline ? '● Busy' : '● Offline'}
+            </Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.followBtn}>
           <Text style={styles.followText}>Follow</Text>
         </TouchableOpacity>
@@ -311,6 +323,43 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      {/* Chat partner profile modal */}
+      <Modal visible={showChatProfile} animationType="slide" onRequestClose={() => setShowChatProfile(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <ScrollView>
+            <View style={{ position: 'relative' }}>
+              <Image source={{ uri: matchPhoto }} style={{ width: '100%', height: 400 }} />
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 }}
+                onPress={() => setShowChatProfile(false)}
+              >
+                <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ padding: 20 }}>
+              <Text style={{ fontSize: 26, fontWeight: 'bold', color: Colors.text, marginBottom: 4 }}>
+                {matchProfile?.name}{matchProfile?.age ? `, ${matchProfile.age}` : ''}
+              </Text>
+              {matchProfile?.location && (
+                <Text style={{ fontSize: 15, color: Colors.textLight, marginBottom: 12 }}>📍 {matchProfile.location}</Text>
+              )}
+              {matchProfile?.bio && (
+                <Text style={{ fontSize: 15, color: Colors.text, lineHeight: 22, marginBottom: 16 }}>{matchProfile.bio}</Text>
+              )}
+              {(otherUser?.photos?.length ?? 0) > 1 && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: Colors.text, marginBottom: 10 }}>More Photos</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {otherUser?.photos?.slice(1).map((p: string, i: number) => (
+                      <Image key={i} source={{ uri: p }} style={{ width: 120, height: 160, borderRadius: 12, marginRight: 10 }} />
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

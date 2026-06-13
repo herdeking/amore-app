@@ -23,6 +23,8 @@ export interface User {
   purpose?: string;
   isPremium?: boolean;
   bannerPhoto?: string;
+  latitude?: number;
+  longitude?: number;
   isOnline?: boolean;
   isVerified?: boolean;
   verificationPhoto?: string;

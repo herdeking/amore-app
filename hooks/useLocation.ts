@@ -15,8 +15,12 @@ export const useLocation = () => {
       const loc = await Location.getCurrentPositionAsync({});
       const [address] = await Location.reverseGeocodeAsync(loc.coords);
       const locationStr = address.city ?? address.region ?? "Unknown";
-      await updateDoc(doc(db, "users", user.id), { location: locationStr });
-      setUser({ ...user, location: locationStr });
+      await updateDoc(doc(db, "users", user.id), {
+        location: locationStr,
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      setUser({ ...user, location: locationStr, latitude: loc.coords.latitude, longitude: loc.coords.longitude } as any);
     })();
   }, [user?.id]);
 };

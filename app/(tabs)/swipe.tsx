@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSwipe } from '../../hooks/useSwipe';
 import { getOrCreateMatch } from '../../services/swipeService';
-import { collection, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { createNotification } from '../../services/notificationActivity';
+import { collection, addDoc, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
@@ -21,7 +22,7 @@ const SWIPE_THRESHOLD = SW * 0.3;
 
 export default function SwipeScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const { profiles, swipe, matched, matchedUser, dismissMatch, refresh } = useSwipe();
   const [refreshing, setRefreshing] = useState(false);
   useLocation();
@@ -281,8 +282,15 @@ export default function SwipeScreen() {
                     try {
                       await updateDoc(doc(db, 'users', current.id), { followersCount: increment(1) });
                       await updateDoc(doc(db, 'users', user.id), { followingCount: increment(1) });
+                      const mySnap = await getDoc(doc(db, 'users', user.id));
+                      if (mySnap.exists()) {
+                        setUser({ ...user, followingCount: mySnap.data().followingCount } as any);
+                      }
+                      await createNotification(current.id, 'follow', user.name || 'Someone');
                       Alert.alert('Followed', `You are now following ${current?.name}`);
-                    } catch {}
+                    } catch (e: any) {
+                      Alert.alert('Follow failed', e.message ?? 'Unknown error');
+                    }
                   }}
                 >
                   <Ionicons name="person-add-outline" size={22} color={Colors.primary} />
