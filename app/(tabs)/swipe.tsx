@@ -22,7 +22,8 @@ const SWIPE_THRESHOLD = SW * 0.3;
 export default function SwipeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { profiles, swipe, matched, matchedUser, dismissMatch } = useSwipe();
+  const { profiles, swipe, matched, matchedUser, dismissMatch, refresh } = useSwipe();
+  const [refreshing, setRefreshing] = useState(false);
   useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -115,8 +116,16 @@ export default function SwipeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>Amore 💕</Text>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterIcon}>⚡</Text>
+        <TouchableOpacity
+          style={styles.filterBtn}
+          onPress={async () => {
+            setRefreshing(true);
+            await refresh();
+            setCurrentIndex(0);
+            setRefreshing(false);
+          }}
+        >
+          {refreshing ? <ActivityIndicator size="small" color={Colors.primary} /> : <Ionicons name="refresh-outline" size={18} color={Colors.text} />}
         </TouchableOpacity>
       </View>
 

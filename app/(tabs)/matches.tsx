@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Image,
-  TouchableOpacity, TextInput, Alert
+  TouchableOpacity, TextInput, Alert, RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -42,11 +42,22 @@ export default function MatchesScreen() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"messages" | "friends" | "calls">("messages");
   const [realMatches, setRealMatches] = useState<MatchWithUser[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  const loadMatches = () => {
     if (!user?.id) return;
     fetchMatches(user.id).then(setRealMatches);
+  };
+
+  useEffect(() => {
+    loadMatches();
   }, [user?.id]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchMatches(user?.id ?? '').then(setRealMatches);
+    setRefreshing(false);
+  };
 
   const combinedMatches = [
     ...realMatches.map(m => ({
@@ -129,6 +140,7 @@ export default function MatchesScreen() {
               </TouchableOpacity>
             )}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
           />
         </>
       )}

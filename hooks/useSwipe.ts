@@ -28,15 +28,16 @@ export const useSwipe = () => {
   const [matched, setMatched] = useState(false);
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
 
+  const load = async () => {
+    if (!user?.id) {
+      setProfiles(DEMO_PROFILES);
+      return;
+    }
+    const real = await fetchProfiles(user.id);
+    setProfiles(real.length > 0 ? [...real, ...DEMO_PROFILES] : DEMO_PROFILES);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      if (!user?.id) {
-        setProfiles(DEMO_PROFILES);
-        return;
-      }
-      const real = await fetchProfiles(user.id);
-      setProfiles(real.length > 0 ? [...real, ...DEMO_PROFILES] : DEMO_PROFILES);
-    };
     load();
   }, [user?.id]);
 
@@ -70,5 +71,5 @@ export const useSwipe = () => {
     setMatchedUser(null);
   };
 
-  return { profiles, swipe, matched, matchedUser, dismissMatch };
+  return { profiles, swipe, matched, matchedUser, dismissMatch, refresh: load };
 };
