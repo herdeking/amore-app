@@ -302,12 +302,8 @@ export default function SwipeScreen() {
                 style={styles.modalMessageBtn}
                 onPress={async () => {
                   setShowProfile(false);
-                  if (!current?.id || !user?.id) {
-                    Alert.alert('Debug', `current.id=${current?.id}, user.id=${user?.id}`);
-                    return;
-                  }
+                  if (!current?.id || !user?.id) return;
                   const matchId = await getOrCreateMatch(user.id, current.id);
-                  Alert.alert('Debug', `matchId=${matchId}, length=${matchId.length}`);
                   router.push(`/chat/${matchId}`);
                 }}
               >

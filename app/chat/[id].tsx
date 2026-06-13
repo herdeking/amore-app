@@ -34,22 +34,26 @@ export default function ChatScreen() {
   const [showGifts, setShowGifts] = useState(false);
   const [translatedMsgs, setTranslatedMsgs] = useState<Record<string, string>>({});
   const [otherUser, setOtherUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(false);
   const isRealMatch = !id?.startsWith('1') && !id?.startsWith('2') && !id?.startsWith('3') && !id?.startsWith('4') && !id?.startsWith('5') && !id?.startsWith('6') && !id?.startsWith('7') && !id?.startsWith('8') && id?.length > 10;
 
   useEffect(() => {
     if (!isRealMatch || !user?.id || !id) return;
 
-    getOtherUserInMatch(id, user.id).then(setOtherUser);
+    setLoadingUser(true);
+    getOtherUserInMatch(id, user.id).then(u => {
+      if (u) setOtherUser(u);
+    }).catch(() => {}).finally(() => setLoadingUser(false));
+
+    setMessages([]); // clear demo messages for real matches
 
     const unsub = subscribeToMessages(id, (msgs) => {
-      if (msgs.length > 0) {
-        setMessages(msgs as any);
-      }
+      setMessages(msgs as any);
     });
     return () => unsub();
   }, [id, user?.id]);
 
-  const matchName = otherUser?.name ?? 'Sonia';
+  const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? 'Loading...' : 'User')) : 'Sonia';
   const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
   const matchPhoto = otherUser?.photos?.[0] ?? 'https://randomuser.me/api/portraits/women/1.jpg';
   const isOnline = true;
