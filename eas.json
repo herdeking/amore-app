@@ -11,6 +11,15 @@
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
         "NPM_CONFIG_IGNORE_SCRIPTS": "false"
       }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "NPM_CONFIG_IGNORE_SCRIPTS": "false"
+      }
     }
   }
 }
