@@ -31,20 +31,23 @@ export const fetchMatches = async (currentUserId: string): Promise<MatchWithUser
 
         const userData = { id: otherUserId, ...userSnap.data() } as User;
 
-        // Fetch last message
+        // Fetch last message and unread count
         let lastMessage = '';
         let lastMessageTime = '';
+        let unreadCount = 0;
         try {
           const msgQ = query(
             collection(db, 'matches', docSnap.id, 'messages'),
             orderBy('createdAt', 'desc'),
-            limit(1)
+            limit(10)
           );
           const msgSnap = await getDocs(msgQ);
           if (!msgSnap.empty) {
-            const msgData = msgSnap.docs[0].data();
-            lastMessage = msgData.text ?? '';
-            lastMessageTime = msgData.createdAt ?? '';
+            const lastMsg = msgSnap.docs[0].data();
+            lastMessage = lastMsg.text ?? '';
+            lastMessageTime = lastMsg.createdAt ?? '';
+            // Count unread - messages from other user not yet read
+            unreadCount = msgSnap.docs.filter(d => d.data().senderId !== currentUserId && !d.data().read).length;
           }
         } catch {}
 
@@ -53,7 +56,7 @@ export const fetchMatches = async (currentUserId: string): Promise<MatchWithUser
           user: userData,
           lastMessage: lastMessage || 'Say hello! 👋',
           lastMessageTime,
-          unread: 0,
+          unread: unreadCount,
         });
       } catch {}
     }

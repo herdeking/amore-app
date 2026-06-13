@@ -207,7 +207,7 @@ export default function ChatScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.headerName}>{matchName}</Text>
             <Text style={[styles.headerStatus, isOnline && styles.busy]}>
-              {isOnline ? '● Busy' : '● Offline'}
+              {isOnline ? '● Online' : '● Offline'}
             </Text>
           </View>
         </TouchableOpacity>

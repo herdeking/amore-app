@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, limit, deleteDoc, doc } from 'firebase/firestore';
 import { sendLocalNotification } from './notifications';
 
 export const createNotification = async (
@@ -24,7 +24,6 @@ export const checkAndShowNotifications = async (userId: string) => {
       collection(db, 'notifications'),
       where('userId', '==', userId),
       where('read', '==', false),
-      orderBy('createdAt', 'desc'),
       limit(10)
     );
     const snap = await getDocs(q);
