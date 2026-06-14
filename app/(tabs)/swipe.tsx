@@ -260,6 +260,7 @@ export default function SwipeScreen() {
           <TouchableOpacity style={styles.cardInfo} onPress={() => setShowProfile(true)} activeOpacity={0.9}>
             <View style={styles.cardNameRow}>
               <Text style={styles.cardName}>{current?.name}, {current?.age ?? calcAge(current?.dob ?? '')}</Text>
+              {current?.isVerified && <Text style={styles.verifiedBadge}>✓</Text>}
               <View style={styles.onlineDot} />
               <View style={{ flex: 1 }} />
 
@@ -293,7 +294,23 @@ export default function SwipeScreen() {
       </View>
 
       {/* Profile Detail Modal */}
-      <Modal visible={showProfile} animationType="slide" onRequestClose={() => setShowProfile(false)}>
+      <Modal visible={showProfile} animationType="slide" onRequestClose={() => setShowProfile(false)}
+        onShow={async () => {
+          // Record profile view
+          if (current?.id && user?.id && current.id !== user.id) {
+            try {
+              const { addDoc, collection: col } = await import('firebase/firestore');
+              const { db: fdb } = await import('../../services/firebase');
+              await addDoc(col(fdb, 'profileViews'), {
+                viewerId: user.id,
+                viewerName: user.name,
+                viewerPhoto: user.photos?.[0] ?? '',
+                viewedId: current.id,
+                viewedAt: new Date().toISOString(),
+              });
+            } catch {}
+          }
+        }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ScrollView>
             <View style={{ position: 'relative' }}>
@@ -527,6 +544,7 @@ const styles = StyleSheet.create({
   cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   cardName: { fontSize: 22, fontWeight: Theme.fontWeight.bold, color: Colors.white },
   onlineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4CAF50' },
+  verifiedBadge: { fontSize: 13, color: '#4FC3F7', fontWeight: '800' as const, backgroundColor: 'rgba(79,195,247,0.2)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10 },
   cardLocation: { fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
   cardBio: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 8 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

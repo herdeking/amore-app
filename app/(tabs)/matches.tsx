@@ -131,6 +131,18 @@ export default function MatchesScreen() {
             />
           </View>
           <FlatList
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>💕</Text>
+                <Text style={styles.emptyTitle}>No matches yet</Text>
+                <Text style={styles.emptySub}>Start swiping to find your match!</Text>
+                <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(tabs)/swipe' as any)}>
+                  <Text style={styles.emptyBtnText}>Start Swiping →</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
             data={filtered}
             keyExtractor={m => m.id}
             renderItem={({ item }) => (
@@ -256,4 +268,10 @@ const styles = StyleSheet.create({
   unreadText: { fontSize: 11, color: Colors.white, fontWeight: Theme.fontWeight.bold },
   separator: { height: 1, backgroundColor: Colors.border, marginLeft: 20 },
   friendBtn: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
+  emptyState: { alignItems: 'center' as const, justifyContent: 'center' as const, padding: 48, gap: 12 },
+  emptyIcon: { fontSize: 56 },
+  emptyTitle: { fontSize: 20, fontWeight: '700' as const, color: '#333' },
+  emptySub: { fontSize: 14, color: '#999', textAlign: 'center' as const },
+  emptyBtn: { backgroundColor: Colors.primary, borderRadius: 24, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
+  emptyBtnText: { color: '#fff', fontWeight: '700' as const, fontSize: 15 },
 });

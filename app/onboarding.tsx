@@ -11,12 +11,13 @@ import { auth, db } from '../services/firebase';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
 
-const steps = ['Name', 'Birthday', 'Bio', 'Photos'];
+const steps = ['Name', 'Birthday', 'Gender', 'Bio', 'Photos'];
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
   const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -76,6 +77,7 @@ export default function Onboarding() {
       await setDoc(doc(db, 'users', uid), {
         id: uid,
         name: name.trim(),
+        gender,
         dob,
         age: calcAge(dob),
         bio,
@@ -148,6 +150,23 @@ export default function Onboarding() {
 
       {step === 2 && (
         <>
+          <Text style={styles.subtitle}>What's your gender?</Text>
+          {['Male', 'Female', 'Other'].map(g => (
+            <TouchableOpacity
+              key={g}
+              style={[styles.genderBtn, gender === g && styles.genderBtnActive]}
+              onPress={() => setGender(g)}
+            >
+              <Text style={[styles.genderBtnText, gender === g && styles.genderBtnTextActive]}>
+                {g === 'Male' ? '♂ Male' : g === 'Female' ? '♀ Female' : '⚧ Other'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {step === 3 && (
+        <>
           <Text style={styles.subtitle}>Write a short bio</Text>
           <TextInput
             style={[styles.input, styles.bioInput]}
@@ -217,4 +236,8 @@ const styles = StyleSheet.create({
   backText: { color: Colors.text, fontWeight: Theme.fontWeight.semibold },
   nextBtn: { flex: 2, padding: 12, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center' },
   nextText: { color: Colors.white, fontWeight: Theme.fontWeight.bold, fontSize: Theme.fontSize.md },
+  genderBtn: { width: '100%', padding: 16, borderRadius: 14, borderWidth: 2, borderColor: '#eee', marginBottom: 12, alignItems: 'center' as const },
+  genderBtnActive: { borderColor: '#FF4B6E', backgroundColor: '#FFF0F3' },
+  genderBtnText: { fontSize: 16, color: '#666', fontWeight: '600' as const },
+  genderBtnTextActive: { color: '#FF4B6E' },
 });
