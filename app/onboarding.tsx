@@ -49,7 +49,12 @@ export default function Onboarding() {
   };
 
   const calcAge = (dobStr: string): number => {
-    const [day, month, year] = dobStr.split('/').map(Number);
+    let day, month, year;
+    if (dobStr.includes('-')) {
+      [year, month, day] = dobStr.split('-').map(Number); // YYYY-MM-DD
+    } else {
+      [day, month, year] = dobStr.split('/').map(Number); // DD/MM/YYYY
+    }
     const today = new Date();
     const birth = new Date(year, month - 1, day);
     let age = today.getFullYear() - birth.getFullYear();

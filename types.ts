@@ -14,6 +14,9 @@ export interface User {
   physique?: string;
   education?: string;
   financial?: string;
+  financialSituation?: string;
+  minAge?: number;
+  maxAge?: number;
   dwelling?: string;
   car?: string;
   smoking?: string;

@@ -20,6 +20,22 @@ import { User } from '../../types';
 const { width: SW, height: SH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SW * 0.3;
 
+const calcAge = (dobStr: string): number => {
+  if (!dobStr) return 0;
+  let day, month, year;
+  if (dobStr.includes('-')) {
+    [year, month, day] = dobStr.split('-').map(Number);
+  } else {
+    [day, month, year] = dobStr.split('/').map(Number);
+  }
+  const today = new Date();
+  const birth = new Date(year, month - 1, day);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
 export default function SwipeScreen() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
@@ -172,7 +188,7 @@ export default function SwipeScreen() {
           {/* Info */}
           <TouchableOpacity style={styles.cardInfo} onPress={() => setShowProfile(true)} activeOpacity={0.9}>
             <View style={styles.cardNameRow}>
-              <Text style={styles.cardName}>{current?.name}, {current?.age}</Text>
+              <Text style={styles.cardName}>{current?.name}, {current?.age ?? calcAge(current?.dob ?? '')}</Text>
               <View style={styles.onlineDot} />
               <View style={{ flex: 1 }} />
 
@@ -246,6 +262,46 @@ export default function SwipeScreen() {
                 </TouchableOpacity>
               </View>
               {current?.bio && <Text style={styles.profileBio}>{current.bio}</Text>}
+
+              {/* ── Full Profile Details ── */}
+              {[
+                { label: 'Gender', value: current?.gender },
+                { label: 'Height', value: current?.height ? `${current.height} cm` : null },
+                { label: 'Weight', value: current?.weight ? `${current.weight} kg` : null },
+                { label: 'Physique', value: current?.physique },
+                { label: 'Education', value: current?.education },
+                { label: 'Financial situation', value: current?.financialSituation },
+                { label: 'Dwelling', value: current?.dwelling },
+                { label: 'Car', value: current?.car },
+                { label: 'Smoking', value: current?.smoking },
+                { label: 'Sociability', value: current?.sociability },
+              ].filter(f => f.value).map(({ label, value }) => (
+                <View key={label} style={styles.profileDetailRow}>
+                  <Text style={styles.profileDetailLabel}>{label}</Text>
+                  <Text style={styles.profileDetailValue}>{value}</Text>
+                </View>
+              ))}
+
+              {/* Looking For section */}
+              {(current?.lookingFor || current?.minAge || current?.maxAge) && (
+                <View style={styles.lookingForSection}>
+                  <Text style={styles.lookingForTitle}>Looking for</Text>
+                  {current?.minAge && current?.maxAge && (
+                    <View style={styles.profileDetailRow}>
+                      <Text style={styles.profileDetailLabel}>Age</Text>
+                      <Text style={styles.profileDetailValue}>From {current.minAge} to {current.maxAge} years</Text>
+                    </View>
+                  )}
+                  {current?.lookingFor && (
+                    <View style={styles.profileDetailRow}>
+                      <Text style={styles.profileDetailLabel}>Looking for</Text>
+                      <Text style={styles.profileDetailValue}>{current.lookingFor}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <Text style={styles.profileUserId}>ID: {current?.id?.slice(0, 8).toUpperCase()}</Text>
               {(current?.interests?.length ?? 0) > 0 && (
                 <View style={[styles.tags, { marginTop: 12 }]}>
                   {(current?.interests ?? []).map(tag => (
@@ -417,4 +473,10 @@ const styles = StyleSheet.create({
   chatBtnText: { color: Colors.primary, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
   keepBtn: { paddingVertical: 10 },
   keepBtnText: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },
+  profileDetailRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  profileDetailLabel: { fontSize: 16, fontWeight: '600' as const, color: '#1a1a1a', marginBottom: 2 },
+  profileDetailValue: { fontSize: 15, color: '#666' },
+  lookingForSection: { marginTop: 16, backgroundColor: '#f9f9f9', borderRadius: 12, padding: 12 },
+  lookingForTitle: { fontSize: 18, fontWeight: '700' as const, color: '#1a1a1a', marginBottom: 8 },
+  profileUserId: { textAlign: 'center' as const, color: '#ccc', fontSize: 12, marginTop: 20, marginBottom: 8 },
 });

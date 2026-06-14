@@ -1,16 +1,28 @@
 export interface User {
   id: string;
   name: string;
-  age: number;
+  age?: number;
+  dob?: string;
   bio: string;
   photos: string[];
   location: string;
   interests: string[];
-  gender: 'male' | 'female' | 'other';
-  lookingFor: 'male' | 'female' | 'both';
-  distanceRange: number;
-  ageRange: { min: number; max: number };
+  gender: string;
+  lookingFor: string;
+  distanceRange?: number;
+  ageRange?: { min: number; max: number };
+  minAge?: number;
+  maxAge?: number;
   createdAt: Date;
+  height?: number;
+  weight?: number;
+  physique?: string;
+  education?: string;
+  financialSituation?: string;
+  dwelling?: string;
+  car?: string;
+  smoking?: string;
+  sociability?: string;
 }
 
 export interface Match {
