@@ -69,17 +69,17 @@ export default function ChatScreen() {
     if (!id || !user?.id || !isRealMatch) return;
     const markRead = async () => {
       try {
-        const q = query(
-          collection(db, 'matches', id, 'messages'),
-          where('senderId', '!=', user.id),
-          where('read', '==', false)
-        );
-        const snap = await getDocs(q);
-        if (snap.empty) return;
+        // Get all messages then filter in JS to avoid compound index requirement
+        const snap = await getDocs(collection(db, 'matches', id, 'messages'));
+        const unread = snap.docs.filter(d => {
+          const data = d.data();
+          return data.senderId !== user.id && data.read === false;
+        });
+        if (unread.length === 0) return;
         const batch = writeBatch(db);
-        snap.docs.forEach(d => batch.update(fsDoc(db, 'matches', id, 'messages', d.id), { read: true }));
+        unread.forEach(d => batch.update(fsDoc(db, 'matches', id, 'messages', d.id), { read: true }));
         await batch.commit();
-      } catch {}
+      } catch(e) { console.log('markRead error:', e); }
     };
     markRead();
   }, [id, user?.id, isRealMatch]);

@@ -27,6 +27,26 @@ export default function VideoScreen() {
   const [tab, setTab] = useState<"live" | "profiles">("live");
   const [uploading, setUploading] = useState(false);
   const [liveJoined, setLiveJoined] = useState(0);
+  const [realVideoProfiles, setRealVideoProfiles] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadVideoProfiles = async () => {
+      try {
+        const { getDocs, collection: col, where: wh, query: q } = await import('firebase/firestore');
+        const snap = await getDocs(q(col(db, 'users'), wh('videoProfile', '!=', null)));
+        const profiles = snap.docs.map(d => ({
+          id: d.id,
+          name: d.data().name,
+          age: d.data().age,
+          location: d.data().location,
+          photo: d.data().photos?.[0],
+          videoUrl: d.data().videoProfile,
+        })).filter(p => p.videoUrl);
+        setRealVideoProfiles(profiles);
+      } catch {}
+    };
+    loadVideoProfiles();
+  }, []);
 
   const handleJoin = (name: string) => {
     if (!user?.isPremium && liveJoined >= 3) {
@@ -56,9 +76,12 @@ export default function VideoScreen() {
       quality: 0.8,
       videoMaxDuration: 15,
     });
-    if (!result.canceled) {
+    if (!result.canceled && result.assets?.[0]) {
       setUploading(true);
       try {
+        const videoUrl = await uploadToCloudinary(result.assets[0].uri);
+        await updateDoc(doc(db, 'users', user?.id ?? ''), { videoProfile: videoUrl });
+        setUser({ ...user, videoProfile: videoUrl } as any);
         Alert.alert("Video Uploaded! 🎉", "Your 15-second video profile is now live. You will get more matches!");
       } catch (e: any) {
         Alert.alert("Error", e.message);
@@ -106,7 +129,7 @@ export default function VideoScreen() {
         />
       ) : (
         <FlatList
-          data={DEMO_PROFILES}
+          data={[...realVideoProfiles, ...DEMO_PROFILES]}
           numColumns={2}
           keyExtractor={i => i.id}
           contentContainerStyle={styles.grid}
