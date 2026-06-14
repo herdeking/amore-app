@@ -134,6 +134,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Call Invites ──────────────────────────────────────
+    match /callInvites/{userId} {
+      allow read: if isLoggedIn() && isOwner(userId);
+      allow create, update: if isLoggedIn();
+      allow delete: if isLoggedIn() && isOwner(userId);
+    }
+
+    // ── Active Calls ──────────────────────────────────────
+    match /calls/{channelId} {
+      allow read, write: if isLoggedIn();
+    }
+
     // ── Block everything else ─────────────────────────
     match /{document=**} {
       allow read, write: if false;

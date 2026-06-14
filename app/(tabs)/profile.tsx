@@ -148,6 +148,28 @@ export default function Profile() {
   };
 
   const updateField = async (field: string, value: string) => {
+    // Validate height and weight
+    if (field === 'height') {
+      const h = parseFloat(value);
+      if (h < 50 || h > 250) {
+        Alert.alert('Invalid height', 'Please enter height in cm (e.g. 175)');
+        return;
+      }
+    }
+    if (field === 'weight') {
+      const w = parseFloat(value);
+      if (w < 20 || w > 300) {
+        Alert.alert('Invalid weight', 'Please enter weight in kg (e.g. 65)');
+        return;
+      }
+    }
+    if (field === 'name') {
+      value = value.trim();
+      if (!value) {
+        Alert.alert('Invalid name', 'Name cannot be empty');
+        return;
+      }
+    }
     if (!user) return;
     try {
       await updateDoc(doc(db, 'users', user.id), { [field]: value });

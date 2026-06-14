@@ -210,15 +210,27 @@ export default function ChatScreen() {
   };
 
   const handleCall = (type: 'voice' | 'video') => {
-    Alert.alert(
-      type === 'video' ? '📹 Video Call' : '📞 Voice Call',
-      'Free users get 10 seconds. Upgrade to VIP for unlimited calls!',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call (10s free)', onPress: () => Alert.alert('Calling...', 'Your 10 second free call has started!') },
-        { text: '👑 Become VIP', style: 'default', onPress: () => Alert.alert('VIP', 'VIP feature coming soon!') },
-      ]
-    );
+    const channelName = `call_${id}_${Date.now()}`;
+    // Save call invite to Firestore so other user gets notified
+    import('firebase/firestore').then(({ doc, setDoc }) => {
+      setDoc(doc(db, 'callInvites', otherUser?.id ?? ''), {
+        callerId: user?.id,
+        callerName: user?.name,
+        channelName,
+        type,
+        matchId: id,
+        createdAt: new Date().toISOString(),
+      }).catch(() => {});
+    });
+    router.push({
+      pathname: `/call/${id}`,
+      params: {
+        type,
+        callerId: user?.id,
+        callerName: user?.name,
+        channelName,
+      }
+    } as any);
   };
 
   const isMine = (senderId: string) => senderId === (user?.id ?? 'me');

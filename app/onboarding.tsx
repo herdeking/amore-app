@@ -75,7 +75,7 @@ export default function Onboarding() {
 
       await setDoc(doc(db, 'users', uid), {
         id: uid,
-        name,
+        name: name.trim(),
         dob,
         age: calcAge(dob),
         bio,
