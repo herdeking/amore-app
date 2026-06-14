@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isMatchMember(matchData) {
+      return request.auth.uid in matchData.users;
+    }
+
+    // ── Users ─────────────────────────────────────────
+    // Anyone logged in can read profiles (for swiping)
+    // Only owner can write their own profile
+    match /users/{userId} {
+      allow read: if isLoggedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ── Matches ───────────────────────────────────────
+    // Only match members can read/write their match
+    match /matches/{matchId} {
+      allow read: if isLoggedIn() &&
+        isMatchMember(resource.data);
+      allow create: if isLoggedIn();
+      allow update: if isLoggedIn() &&
+        isMatchMember(resource.data);
+      allow delete: if false;
+
+      // Messages inside a match
+      match /messages/{messageId} {
+        allow read: if isLoggedIn() &&
+          isMatchMember(get(/databases/$(database)/documents/matches/$(matchId)).data);
+        allow create: if isLoggedIn() &&
+          isMatchMember(get(/databases/$(database)/documents/matches/$(matchId)).data) &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update: if isLoggedIn() &&
+          isMatchMember(get(/databases/$(database)/documents/matches/$(matchId)).data);
+        allow delete: if false;
+      }
+
+      // Typing status
+      match /typing/{doc} {
+        allow read, write: if isLoggedIn() &&
+          isMatchMember(get(/databases/$(database)/documents/matches/$(matchId)).data);
+      }
+    }
+
+    // ── Likes ─────────────────────────────────────────
+    match /likes/{likeId} {
+      allow read: if isLoggedIn() &&
+        (resource.data.fromUserId == request.auth.uid ||
+         resource.data.toUserId == request.auth.uid);
+      allow create: if isLoggedIn() &&
+        request.resource.data.fromUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Swipes ────────────────────────────────────────
+    match /swipes/{swipeId} {
+      allow read: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isLoggedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Stories ───────────────────────────────────────
+    match /stories/{storyId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ── Notifications ─────────────────────────────────
+    match /notifications/{notifId} {
+      allow read: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isLoggedIn();
+      allow update: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow delete: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ── Reports / Blocks ──────────────────────────────
+    match /reports/{reportId} {
+      allow read: if false;
+      allow create: if isLoggedIn() &&
+        request.resource.data.fromUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Visits ────────────────────────────────────────
+    match /visits/{visitId} {
+      allow read: if isLoggedIn() &&
+        (resource.data.fromUserId == request.auth.uid ||
+         resource.data.toUserId == request.auth.uid);
+      allow create: if isLoggedIn() &&
+        request.resource.data.fromUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Gifts ─────────────────────────────────────────
+    match /gifts/{giftId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() &&
+        request.resource.data.fromUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Payments ──────────────────────────────────────
+    match /payments/{paymentId} {
+      allow read: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isLoggedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Block everything else ─────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
