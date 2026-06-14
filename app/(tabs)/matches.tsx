@@ -11,11 +11,12 @@ import AdBanner from '../../components/AdBanner';
 import { useAuthStore } from '../../store/authStore';
 import { fetchMatches, MatchWithUser } from '../../services/matchesService';
 import { useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
 import Stories from '../../components/stories/Stories';
 
 const DEMO_MATCHES = [
-  { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 2, online: true },
-  { id: '2', name: 'Chioma', photo: 'https://randomuser.me/api/portraits/women/2.jpg', lastMessage: 'Would love to meet up!', time: '15m ago', unread: 1, online: true },
+  { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 0, online: true },
+  { id: '2', name: 'Chioma', photo: 'https://randomuser.me/api/portraits/women/2.jpg', lastMessage: 'Would love to meet up!', time: '15m ago', unread: 0, online: true },
   { id: '3', name: 'Fatima', photo: 'https://randomuser.me/api/portraits/women/3.jpg', lastMessage: 'You look great in your photos', time: '1h ago', unread: 0, online: false },
   { id: '4', name: 'Ngozi', photo: 'https://randomuser.me/api/portraits/women/4.jpg', lastMessage: 'Haha that is so funny 😂', time: '2h ago', unread: 0, online: true },
   { id: '5', name: 'Blessing', photo: 'https://randomuser.me/api/portraits/women/5.jpg', lastMessage: 'What do you do for fun?', time: '3h ago', unread: 0, online: false },
@@ -45,14 +46,7 @@ export default function MatchesScreen() {
   const [realMatches, setRealMatches] = useState<MatchWithUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadMatches = () => {
-    if (!user?.id) return;
-    fetchMatches(user.id).then(setRealMatches);
-  };
 
-  useEffect(() => {
-    loadMatches();
-  }, [user?.id]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -74,11 +68,21 @@ export default function MatchesScreen() {
   ];
 
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (user?.id) {
-      fetchMatches(user.id).then(m => { setRealMatches(m); setLoading(false); });
-    }
+
+  const loadMatches = React.useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    const m = await fetchMatches(user.id);
+    setRealMatches(m);
+    setLoading(false);
   }, [user?.id]);
+
+  useEffect(() => { loadMatches(); }, [user?.id]);
+
+  // Refresh unread counts every time user comes back to this screen
+  useFocusEffect(React.useCallback(() => {
+    loadMatches();
+  }, [loadMatches]));
 
   const filtered = combinedMatches.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase())

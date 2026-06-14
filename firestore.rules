@@ -21,7 +21,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isLoggedIn();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow update: if isOwner(userId) || (
+        isLoggedIn() && (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['followersCount', 'followingCount', 'expoPushToken', 'isOnline', 'lastSeen'])
+        )
+      );
       allow delete: if isOwner(userId);
     }
 
