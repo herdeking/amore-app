@@ -57,6 +57,24 @@ export default function CallScreen() {
   }, [channel]);
 
   const initAgora = async () => {
+    // Request permissions
+    try {
+      const { PermissionsAndroid, Platform } = require('react-native');
+      if (Platform.OS === 'android') {
+        const grants = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        ]);
+        const camOk = grants[PermissionsAndroid.PERMISSIONS.CAMERA] === 'granted';
+        const micOk = grants[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === 'granted';
+        if (!camOk || !micOk) {
+          Alert.alert('Permissions Required', 'Please allow camera and microphone to make calls.', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
+          return;
+        }
+      }
+    } catch {}
     try {
       engine.current = createAgoraRtcEngine();
       engine.current.initialize({

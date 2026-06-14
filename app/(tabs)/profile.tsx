@@ -428,7 +428,7 @@ export default function Profile() {
           <Text style={styles.sectionTitle}>🎥 Video Intro</Text>
           <TouchableOpacity
             style={styles.videoIntroBtn}
-            onPress={() => Alert.alert('Coming Soon', 'Video profile intro will be available in the next update!')}
+            onPress={() => router.push('/(tabs)/video' as any)}
           >
             <Ionicons name="videocam-outline" size={28} color={Colors.primary} />
             <Text style={styles.videoIntroText}>

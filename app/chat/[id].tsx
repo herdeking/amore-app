@@ -396,7 +396,7 @@ export default function ChatScreen() {
           <TextInput
             style={styles.input}
             value={text}
-            onChangeText={setText}
+            onChangeText={handleTextChange}
             placeholder="Send a message"
             placeholderTextColor={Colors.textLight}
             multiline
@@ -404,7 +404,31 @@ export default function ChatScreen() {
           <TouchableOpacity style={styles.inputIcon} onPress={messages.length <= 2 ? handleIcebreakers : handleAIReply} disabled={aiLoading}>
             <Text>{aiLoading ? '⏳' : '🤖'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.inputIcon}>
+          <TouchableOpacity style={styles.inputIcon} onPress={async () => {
+            const ImagePicker = require('expo-image-picker');
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 0.7,
+            });
+            if (result.canceled || !result.assets?.[0]) return;
+            try {
+              const { uploadToCloudinary } = require('../../services/cloudinary');
+              const url = await uploadToCloudinary(result.assets[0].uri);
+              const msgText = `📷 [Photo](${url})`;
+              if (isRealMatch && user?.id && id) {
+                sendMessage(id, user.id, msgText).catch(() => {});
+              } else {
+                setMessages((prev: any) => [...prev, {
+                  id: Date.now().toString(),
+                  senderId: user?.id ?? 'me',
+                  text: msgText,
+                  createdAt: new Date().toISOString(),
+                }]);
+              }
+            } catch(e: any) {
+              Alert.alert('Upload failed', e.message);
+            }
+          }}>
             <Text>📷</Text>
           </TouchableOpacity>
           <TouchableOpacity
