@@ -394,6 +394,42 @@ export default function Profile() {
           <Field label="Smoking" field="smoking" value={user?.smoking} />
           <Field label="Alcohol" field="alcohol" value={user?.alcohol} />
           <Field label="Children" field="children" value={user?.children} />
+          <Field label="Physique" field="physique" value={(user as any)?.physique} />
+          <Field label="Dwelling" field="dwelling" value={(user as any)?.dwelling} />
+          <Field label="Car" field="car" value={(user as any)?.car} />
+          <Field label="Sociability" field="sociability" value={(user as any)?.sociability} />
+          <Field label="Looking for" field="lookingFor" value={(user as any)?.lookingFor} />
+        </View>
+
+        {/* Video intro */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎥 Video Intro</Text>
+          <TouchableOpacity
+            style={styles.videoIntroBtn}
+            onPress={() => Alert.alert('Coming Soon', 'Video profile intro will be available in the next update!')}
+          >
+            <Ionicons name="videocam-outline" size={28} color={Colors.primary} />
+            <Text style={styles.videoIntroText}>
+              {(user as any)?.videoIntro ? 'Change video intro' : 'Add a 30s video intro'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Icebreaker Questions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💬 Icebreakers</Text>
+          {[
+            { q: 'Would you rather travel or stay home?', field: 'ib1' },
+            { q: 'Morning person or night owl?', field: 'ib2' },
+            { q: 'Your love language?', field: 'ib3' },
+          ].map(({ q, field }) => (
+            <TouchableOpacity key={field} style={styles.icebreakerRow} onPress={() => setEditField(field)}>
+              <Text style={styles.icebreakerQ}>{q}</Text>
+              <Text style={styles.icebreakerA}>
+                {(user as any)?.[field] ?? 'Tap to answer ✏️'}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 
@@ -572,6 +608,11 @@ const styles = StyleSheet.create({
   fieldValue: { fontSize: 13, color: Colors.textLight, marginTop: 2 },
   incomplete: { fontStyle: 'italic' },
   editLink: { fontSize: 14, color: Colors.primary },
+  icebreakerRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  videoIntroBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, padding: 16, backgroundColor: '#fff8f9', borderRadius: 12, borderWidth: 1, borderColor: '#FFE4EE' },
+  videoIntroText: { fontSize: 15, color: Colors.primary, fontWeight: '500' as const },
+  icebreakerQ: { fontSize: 13, color: '#999', marginBottom: 4 },
+  icebreakerA: { fontSize: 15, color: '#333', fontWeight: '500' as const },
   completionBar: { marginHorizontal: 16, marginTop: 12, backgroundColor: '#fff8f9', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FFE4EE' },
   completionRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 6 },
   completionLabel: { fontSize: 13, fontWeight: '700' as const, color: Colors.primary },

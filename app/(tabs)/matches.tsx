@@ -11,6 +11,7 @@ import AdBanner from '../../components/AdBanner';
 import { useAuthStore } from '../../store/authStore';
 import { fetchMatches, MatchWithUser } from '../../services/matchesService';
 import { useEffect } from 'react';
+import Stories from '../../components/stories/Stories';
 
 const DEMO_MATCHES = [
   { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 2, online: true },
@@ -72,6 +73,13 @@ export default function MatchesScreen() {
     ...DEMO_MATCHES,
   ];
 
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (user?.id) {
+      fetchMatches(user.id).then(m => { setRealMatches(m); setLoading(false); });
+    }
+  }, [user?.id]);
+
   const filtered = combinedMatches.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -85,6 +93,10 @@ export default function MatchesScreen() {
           <Text style={styles.filterIcon}>⚡</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Stories */}
+      <Stories currentUser={user} />
+      <View style={{ height: 1, backgroundColor: '#f0f0f0' }} />
 
       {/* Tabs */}
       <View style={styles.tabs}>

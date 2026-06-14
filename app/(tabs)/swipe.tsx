@@ -36,6 +36,44 @@ const calcAge = (dobStr: string): number => {
   return age;
 };
 
+import { calculateMatchScore, getScoreColor, getScoreLabel } from '../../services/matchScore';
+import { SwipeCardSkeleton } from '../../components/ui/Skeleton';
+
+// ── Confetti piece component ──
+const ConfettiPiece = ({ index }: { index: number }) => {
+  const anim = React.useRef(new Animated.Value(0)).current;
+  const colors = ['#FF4B6E', '#FFD166', '#06D6A0', '#118AB2', '#FFB347', '#FF69B4'];
+  const color = colors[index % colors.length];
+  const left = (index * 37) % 100;
+  const size = 8 + (index % 6);
+
+  React.useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 1500 + (index % 5) * 200,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View style={{
+      position: 'absolute',
+      top: 0,
+      left: `${left}%` as any,
+      width: size,
+      height: size,
+      borderRadius: index % 2 === 0 ? size / 2 : 0,
+      backgroundColor: color,
+      transform: [{
+        translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 700] }),
+      }, {
+        rotate: anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${360 + index * 30}deg`] }),
+      }],
+      opacity: anim.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 1, 0] }),
+    }} />
+  );
+};
+
 const DAILY_SWIPE_LIMIT = 20;
 
 const getDailySwipeCount = async (userId: string): Promise<number> => {
@@ -229,6 +267,15 @@ export default function SwipeScreen() {
             {current?.location && (
               <Text style={styles.cardLocation}>📍 {current.location}</Text>
             )}
+            {user && current && (() => {
+              const score = calculateMatchScore(user as any, current as any);
+              const color = getScoreColor(score);
+              return (
+                <View style={styles.compatBadge}>
+                  <Text style={[styles.compatText, { color }]}>{score}% Match</Text>
+                </View>
+              );
+            })()}
             {current?.bio && (
               <Text style={styles.cardBio} numberOfLines={2}>{current.bio}</Text>
             )}
@@ -334,6 +381,22 @@ export default function SwipeScreen() {
                 </View>
               )}
 
+              {/* Icebreakers */}
+              {(['ib1','ib2','ib3'] as const).some(k => (current as any)?.[k]) && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={styles.lookingForTitle}>💬 Icebreakers</Text>
+                  {[
+                    { q: 'Would you rather travel or stay home?', field: 'ib1' },
+                    { q: 'Morning person or night owl?', field: 'ib2' },
+                    { q: 'Your love language?', field: 'ib3' },
+                  ].filter(({ field }) => (current as any)?.[field]).map(({ q, field }) => (
+                    <View key={field} style={styles.profileDetailRow}>
+                      <Text style={styles.profileDetailLabel}>{q}</Text>
+                      <Text style={styles.profileDetailValue}>{(current as any)[field]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
               <Text style={styles.profileUserId}>ID: {current?.id?.slice(0, 8).toUpperCase()}</Text>
               {(current?.interests?.length ?? 0) > 0 && (
                 <View style={[styles.tags, { marginTop: 12 }]}>
@@ -498,7 +561,15 @@ const styles = StyleSheet.create({
   profileBio: { fontSize: 15, color: Colors.text, lineHeight: 22 },
   morePhotosTitle: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.text, marginBottom: 10 },
   morePhoto: { width: 120, height: 160, borderRadius: 12, marginRight: 10 },
-  matchModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,75,110,0.96)', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  matchModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,75,110,0.96)', alignItems: 'center' as const, justifyContent: 'center' as const, padding: 32, overflow: 'hidden' as const },
+  matchEmoji: { fontSize: 48, marginBottom: 8 },
+  matchPhotos: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, marginBottom: 16 },
+  matchPhotoLeft: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#fff' },
+  matchPhotoRight: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#fff' },
+  matchHeart: { fontSize: 28 },
+  matchScoreBox: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 16, paddingHorizontal: 24, paddingVertical: 10, marginBottom: 20, alignItems: 'center' as const },
+  matchScoreNum: { fontSize: 32, fontWeight: '800' as const },
+  matchScoreLabel: { fontSize: 14, color: '#fff', marginTop: 2 },
   matchTitle: { fontSize: 32, fontWeight: Theme.fontWeight.bold, color: Colors.white, marginBottom: 8 },
   matchSub: { fontSize: 16, color: 'rgba(255,255,255,0.9)', marginBottom: 24, textAlign: 'center' },
   matchPhoto: { width: 160, height: 160, borderRadius: 80, borderWidth: 4, borderColor: Colors.white, marginBottom: 24 },
@@ -507,6 +578,8 @@ const styles = StyleSheet.create({
   keepBtn: { paddingVertical: 10 },
   keepBtnText: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },
   swipeCounter: { fontSize: 12, color: '#999', fontWeight: '500' as const },
+  compatBadge: { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const, marginTop: 4 },
+  compatText: { fontSize: 11, fontWeight: '700' as const },
   profileDetailRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
   profileDetailLabel: { fontSize: 16, fontWeight: '600' as const, color: '#1a1a1a', marginBottom: 2 },
   profileDetailValue: { fontSize: 15, color: '#666' },
