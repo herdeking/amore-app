@@ -29,6 +29,7 @@ export const sendMessage = async (matchId: string, senderId: string, text: strin
     text,
     senderId,
     createdAt: new Date().toISOString(),
+    read: false,
   });
 };
 

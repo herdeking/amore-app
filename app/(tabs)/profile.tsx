@@ -207,6 +207,28 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
+        {/* Profile Completion % */}
+        {(() => {
+          const fields = [
+            user?.name, user?.bio, user?.photos?.[0], user?.gender,
+            user?.dob, user?.location, user?.height, user?.weight,
+            user?.education, user?.smoking, user?.physique, user?.purpose,
+          ];
+          const filled = fields.filter(Boolean).length;
+          const pct = Math.round((filled / fields.length) * 100);
+          return pct < 100 ? (
+            <View style={styles.completionBar}>
+              <View style={styles.completionRow}>
+                <Text style={styles.completionLabel}>Profile {pct}% complete</Text>
+                <Text style={styles.completionHint}>Complete to get more matches!</Text>
+              </View>
+              <View style={styles.completionTrack}>
+                <View style={[styles.completionFill, { width: `${pct}%` as any }]} />
+              </View>
+            </View>
+          ) : null;
+        })()}
+
         {/* Name, gender, ID */}
         <View style={styles.nameSection}>
           <TouchableOpacity onPress={() => setEditField('name')}><Text style={styles.nameText}>{user?.name ?? 'Your Name'} ✏️</Text></TouchableOpacity>
@@ -550,6 +572,12 @@ const styles = StyleSheet.create({
   fieldValue: { fontSize: 13, color: Colors.textLight, marginTop: 2 },
   incomplete: { fontStyle: 'italic' },
   editLink: { fontSize: 14, color: Colors.primary },
+  completionBar: { marginHorizontal: 16, marginTop: 12, backgroundColor: '#fff8f9', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FFE4EE' },
+  completionRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 6 },
+  completionLabel: { fontSize: 13, fontWeight: '700' as const, color: Colors.primary },
+  completionHint: { fontSize: 11, color: '#999' },
+  completionTrack: { height: 6, backgroundColor: '#FFE4EE', borderRadius: 3 },
+  completionFill: { height: 6, backgroundColor: Colors.primary, borderRadius: 3 },
 });
 
 const modal = StyleSheet.create({

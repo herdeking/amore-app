@@ -10,6 +10,7 @@ import { getAIReply, getIcebreakers } from '../../services/aiReply';
 import { sendGift, GIFTS } from '../../services/gifts';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { collection, query, where, getDocs, writeBatch, doc as fsDoc, setDoc, serverTimestamp, onSnapshot as fsOnSnapshot } from 'firebase/firestore';
 import { recordProfileView } from '../../services/profileViews';
 import { sendLocalNotification } from '../../services/notifications';
 import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
@@ -63,10 +64,33 @@ export default function ChatScreen() {
     return () => unsub();
   }, [id, user?.id]);
 
+  // Mark all unread messages as read when chat opens
+  useEffect(() => {
+    if (!id || !user?.id || !isRealMatch) return;
+    const markRead = async () => {
+      try {
+        const q = query(
+          collection(db, 'matches', id, 'messages'),
+          where('senderId', '!=', user.id),
+          where('read', '==', false)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) return;
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.update(fsDoc(db, 'matches', id, 'messages', d.id), { read: true }));
+        await batch.commit();
+      } catch {}
+    };
+    markRead();
+  }, [id, user?.id, isRealMatch]);
+
   const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? 'Loading...' : 'User')) : 'Sonia';
   const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
   const matchPhoto = otherUser?.photos?.[0] ?? 'https://randomuser.me/api/portraits/women/1.jpg';
-  const isOnline = true;
+  const isOnline = otherUser?.isOnline ?? false;
+  const lastSeenText = isOnline ? '● Online' : otherUser?.lastSeen
+    ? `Last seen ${new Date(otherUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : '● Offline';
 
   const send = () => {
     if (!text.trim()) return;
@@ -88,13 +112,17 @@ export default function ChatScreen() {
   };
 
   const sendQuick = (reply: string) => {
-    const msg = {
-      id: Date.now().toString(),
-      senderId: user?.id ?? 'me',
-      text: reply,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, msg]);
+    if (isRealMatch && user?.id && id) {
+      sendMessage(id, user.id, reply).catch(() => {});
+    } else {
+      const msg = {
+        id: Date.now().toString(),
+        senderId: user?.id ?? 'me',
+        text: reply,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, msg]);
+    }
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
@@ -195,6 +223,45 @@ export default function ChatScreen() {
 
   const isMine = (senderId: string) => senderId === (user?.id ?? 'me');
 
+  // ── Typing indicator state ──
+  const [otherTyping, setOtherTyping] = React.useState(false);
+  const [reactions, setReactions] = React.useState<Record<string, string>>({});
+  const [reactionMsgId, setReactionMsgId] = React.useState<string | null>(null);
+
+  const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
+
+  const addReaction = (msgId: string, emoji: string) => {
+    setReactions(prev => ({ ...prev, [msgId]: emoji }));
+    setReactionMsgId(null);
+  };
+  const typingTimeoutRef = React.useRef<any>(null);
+
+  // Watch other user typing status
+  React.useEffect(() => {
+    if (!id || !user?.id || !isRealMatch) return;
+    const otherUserId = (id as string);
+    const typingRef = fsDoc(db, 'matches', id, 'typing', 'status');
+    const unsub = fsOnSnapshot(typingRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const otherKey = Object.keys(data).find(k => k !== user.id);
+      if (otherKey) setOtherTyping(data[otherKey] === true);
+    });
+    return () => unsub();
+  }, [id, user?.id, isRealMatch]);
+
+  // Send typing status when user types
+  const handleTextChange = async (val: string) => {
+    setText(val);
+    if (!id || !user?.id || !isRealMatch) return;
+    const typingRef = fsDoc(db, 'matches', id, 'typing', 'status');
+    await setDoc(typingRef, { [user.id]: true }, { merge: true }).catch(() => {});
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(async () => {
+      await setDoc(typingRef, { [user.id]: false }, { merge: true }).catch(() => {});
+    }, 2000);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -207,7 +274,7 @@ export default function ChatScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.headerName}>{matchName}</Text>
             <Text style={[styles.headerStatus, isOnline && styles.busy]}>
-              {isOnline ? '● Online' : '● Offline'}
+              {lastSeenText}
             </Text>
           </View>
         </TouchableOpacity>
@@ -231,25 +298,38 @@ export default function ChatScreen() {
           keyExtractor={m => m.id}
           contentContainerStyle={styles.messageList}
           renderItem={({ item }) => (
-            <View style={[styles.msgRow, isMine(item.senderId) && styles.msgRowMine]}>
-              {!isMine(item.senderId) && (
-                <Image source={{ uri: matchPhoto }} style={styles.msgAvatar} />
-              )}
-              <TouchableOpacity
-                onLongPress={() => handleTranslate(item.id, item.text)}
-                style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}
-              >
-                <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
-                  {item.text}
-                  {translatedMsgs[item.id] && (
-                    <Text style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontStyle: 'italic' }}>
-                      🌍 {translatedMsgs[item.id]}
-                    </Text>
-                  )}
-                </Text>
-              </TouchableOpacity>
+            <View>
+              <View style={[styles.msgRow, isMine(item.senderId) && styles.msgRowMine]}>
+                {!isMine(item.senderId) && (
+                  <Image source={{ uri: matchPhoto }} style={styles.msgAvatar} />
+                )}
+                <TouchableOpacity
+                  onLongPress={() => setReactionMsgId(item.id)}
+                  onPress={() => {}}
+                  style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}
+                >
+                  <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
+                    {item.text}
+                    {translatedMsgs[item.id] && (
+                      <Text style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontStyle: 'italic' }}>
+                        🌍 {translatedMsgs[item.id]}
+                      </Text>
+                    )}
+                  </Text>
+                </TouchableOpacity>
+                {isMine(item.senderId) && (
+                  <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />
+                )}
+              </View>
               {isMine(item.senderId) && (
-                <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />
+                <Text style={styles.tickText}>
+                  {(item as any).read ? '✓✓' : '✓'}
+                </Text>
+              )}
+              {reactions[item.id] && (
+                <Text style={[styles.reactionBadge, isMine(item.senderId) && styles.reactionBadgeMine]}>
+                  {reactions[item.id]}
+                </Text>
               )}
             </View>
           )}
@@ -360,6 +440,22 @@ export default function ChatScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+      {/* Reaction Picker */}
+      {reactionMsgId && (
+        <TouchableOpacity
+          style={styles.reactionOverlay}
+          activeOpacity={1}
+          onPress={() => setReactionMsgId(null)}
+        >
+          <View style={styles.reactionPicker}>
+            {REACTION_EMOJIS.map(emoji => (
+              <TouchableOpacity key={emoji} onPress={() => addReaction(reactionMsgId, emoji)}>
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -390,9 +486,18 @@ const styles = StyleSheet.create({
   videoCallBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFD700', marginHorizontal: 80, marginBottom: 8, paddingVertical: 12, borderRadius: 30, gap: 8 },
   videoCallIcon: { fontSize: 18 },
   videoCallText: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.white },
-  quickReplies: { paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
-  quickReply: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
-  quickReplyText: { fontSize: 13, color: Colors.text },
+  quickReplies: { paddingHorizontal: 12, paddingBottom: 6, gap: 6 },
+  quickReply: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
+  quickReplyText: { fontSize: 11, color: Colors.text },
+  typingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 6 },
+  typingBubble: { backgroundColor: '#f0f0f0', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
+  typingDots: { fontSize: 18, color: '#999', letterSpacing: 2 },
+  tickText: { fontSize: 10, color: '#999', textAlign: 'right' as const, marginRight: 40, marginTop: -4, marginBottom: 4 },
+  reactionBadge: { fontSize: 16, marginLeft: 40, marginTop: -8, marginBottom: 4 },
+  reactionBadgeMine: { textAlign: 'right' as const, marginRight: 40, marginLeft: 0 },
+  reactionOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 999 },
+  reactionPicker: { flexDirection: 'row' as const, backgroundColor: '#fff', borderRadius: 30, padding: 10, gap: 8, elevation: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8 },
+  reactionEmoji: { fontSize: 28 },
   inputRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
   inputIcon: { padding: 4 },
   input: { flex: 1, backgroundColor: '#F0F0F0', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 15, color: Colors.text, maxHeight: 100 },

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Animated, PanResponder,
   Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView, Alert
@@ -36,11 +36,35 @@ const calcAge = (dobStr: string): number => {
   return age;
 };
 
+const DAILY_SWIPE_LIMIT = 20;
+
+const getDailySwipeCount = async (userId: string): Promise<number> => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  const key = `swipes_${userId}_${new Date().toDateString()}`;
+  const val = await AsyncStorage.getItem(key);
+  return val ? parseInt(val) : 0;
+};
+
+const incrementSwipeCount = async (userId: string) => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  const key = `swipes_${userId}_${new Date().toDateString()}`;
+  const current = await getDailySwipeCount(userId);
+  await AsyncStorage.setItem(key, String(current + 1));
+};
+
 export default function SwipeScreen() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const { profiles, swipe, matched, matchedUser, dismissMatch, refresh } = useSwipe();
   const [refreshing, setRefreshing] = useState(false);
+  const [swipesLeft, setSwipesLeft] = useState<number>(DAILY_SWIPE_LIMIT);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getDailySwipeCount(user.id).then(count => {
+      setSwipesLeft(Math.max(0, DAILY_SWIPE_LIMIT - count));
+    });
+  }, [user?.id]);
   useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -105,6 +129,9 @@ export default function SwipeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.logo}>Amore 💕</Text>
+        {!user?.isPremium && (
+          <Text style={styles.swipeCounter}>{swipesLeft}/{DAILY_SWIPE_LIMIT} swipes</Text>
+        )}
         <View style={styles.empty}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.emptyText}>Loading profiles...</Text>
@@ -117,6 +144,9 @@ export default function SwipeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.logo}>Amore 💕</Text>
+        {!user?.isPremium && (
+          <Text style={styles.swipeCounter}>{swipesLeft}/{DAILY_SWIPE_LIMIT} swipes</Text>
+        )}
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>💫</Text>
           <Text style={styles.emptyTitle}>You have seen everyone!</Text>
@@ -133,6 +163,9 @@ export default function SwipeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>Amore 💕</Text>
+        {!user?.isPremium && (
+          <Text style={styles.swipeCounter}>{swipesLeft}/{DAILY_SWIPE_LIMIT} swipes</Text>
+        )}
         <TouchableOpacity
           style={styles.filterBtn}
           onPress={async () => {
@@ -473,6 +506,7 @@ const styles = StyleSheet.create({
   chatBtnText: { color: Colors.primary, fontWeight: Theme.fontWeight.bold, fontSize: 16 },
   keepBtn: { paddingVertical: 10 },
   keepBtnText: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },
+  swipeCounter: { fontSize: 12, color: '#999', fontWeight: '500' as const },
   profileDetailRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
   profileDetailLabel: { fontSize: 16, fontWeight: '600' as const, color: '#1a1a1a', marginBottom: 2 },
   profileDetailValue: { fontSize: 15, color: '#666' },
