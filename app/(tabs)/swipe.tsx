@@ -175,7 +175,7 @@ export default function SwipeScreen() {
               <Text style={styles.cardName}>{current?.name}, {current?.age}</Text>
               <View style={styles.onlineDot} />
               <View style={{ flex: 1 }} />
-              <Ionicons name="information-circle-outline" size={26} color="#fff" />
+
             </View>
             {current?.location && (
               <Text style={styles.cardLocation}>📍 {current.location}</Text>

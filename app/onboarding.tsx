@@ -37,6 +37,27 @@ export default function Onboarding() {
     return await uploadToCloudinary(uri);
   };
 
+  const formatDob = (text: string) => {
+    const digits = text.replace(/\D/g, '');
+    let formatted = digits;
+    if (digits.length >= 3 && digits.length <= 4) {
+      formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+    } else if (digits.length > 4) {
+      formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4, 8);
+    }
+    setDob(formatted);
+  };
+
+  const calcAge = (dobStr: string): number => {
+    const [day, month, year] = dobStr.split('/').map(Number);
+    const today = new Date();
+    const birth = new Date(year, month - 1, day);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+
   const saveProfile = async () => {
     setSaving(true);
     try {
@@ -51,6 +72,7 @@ export default function Onboarding() {
         id: uid,
         name,
         dob,
+        age: calcAge(dob),
         bio,
         photos: uploadedPhotos,
         createdAt: new Date().toISOString(),
@@ -67,7 +89,14 @@ export default function Onboarding() {
 
   const next = () => {
     if (step === 0 && !name.trim()) return Alert.alert('Enter your name');
-    if (step === 1 && !dob.trim()) return Alert.alert('Enter your birthday');
+    if (step === 1) {
+      if (!dob.trim()) return Alert.alert('Enter your birthday');
+      const parts = dob.split('/');
+      if (parts.length !== 3 || parts[2].length !== 4) return Alert.alert('Use format DD/MM/YYYY');
+      const age = calcAge(dob);
+      if (age < 18) return Alert.alert('You must be 18 or older to use Amore');
+      if (age > 100) return Alert.alert('Please enter a valid date of birth');
+    }
     if (step === 3 && photos.length === 0) return Alert.alert('Add at least one photo');
     if (step < steps.length - 1) setStep(step + 1);
     else saveProfile();
@@ -105,7 +134,7 @@ export default function Onboarding() {
             style={styles.input}
             placeholder="DD/MM/YYYY"
             value={dob}
-            onChangeText={setDob}
+            onChangeText={formatDob}
             keyboardType="numeric"
             maxLength={10}
           />
