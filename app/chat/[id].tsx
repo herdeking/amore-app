@@ -290,7 +290,18 @@ export default function ChatScreen() {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.followBtn}>
+        <TouchableOpacity style={styles.followBtn} onPress={async () => {
+          if (!otherUser?.id || !user?.id) return;
+          try {
+            const { updateDoc, doc: fsDoc2, increment: inc } = await import('firebase/firestore');
+            const { db: fdb } = await import('../../services/firebase');
+            await updateDoc(fsDoc2(fdb, 'users', otherUser.id), { followersCount: inc(1) });
+            await updateDoc(fsDoc2(fdb, 'users', user.id), { followingCount: inc(1) });
+            Alert.alert('Following', `You are now following ${matchName}`);
+          } catch(e: any) {
+            Alert.alert('Error', e.message);
+          }
+        }}>
           <Text style={styles.followText}>Follow</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.moreBtn}>
@@ -320,14 +331,28 @@ export default function ChatScreen() {
                   onPress={() => {}}
                   style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}
                 >
-                  <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
-                    {item.text}
-                    {translatedMsgs[item.id] && (
-                      <Text style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontStyle: 'italic' }}>
-                        🌍 {translatedMsgs[item.id]}
+                  {(() => {
+                    const photoMatch = item.text.match(/📷 \[Photo\]\((https?:\/\/[^\)]+)\)/);
+                    if (photoMatch) {
+                      return (
+                        <Image
+                          source={{ uri: photoMatch[1] }}
+                          style={{ width: 200, height: 200, borderRadius: 12 }}
+                          resizeMode="cover"
+                        />
+                      );
+                    }
+                    return (
+                      <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
+                        {item.text}
+                        {translatedMsgs[item.id] && (
+                          <Text style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontStyle: 'italic' }}>
+                            🌍 {translatedMsgs[item.id]}
+                          </Text>
+                        )}
                       </Text>
-                    )}
-                  </Text>
+                    );
+                  })()}
                 </TouchableOpacity>
                 {isMine(item.senderId) && (
                   <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />

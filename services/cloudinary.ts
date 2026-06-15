@@ -15,8 +15,6 @@ const tryCloudinary = async (base64: string, isVideo: boolean): Promise<string> 
   const resourceType = isVideo ? 'video' : 'image';
   const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
   const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
-  const publicId = `amore_${Date.now()}`;
-
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,7 +22,6 @@ const tryCloudinary = async (base64: string, isVideo: boolean): Promise<string> 
       file: `data:${mimeType};base64,${base64}`,
       upload_preset: UPLOAD_PRESET,
       resource_type: resourceType,
-      public_id: publicId,
     }),
   });
   const data = await response.json();
