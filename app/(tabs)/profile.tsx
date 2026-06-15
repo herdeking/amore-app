@@ -224,7 +224,22 @@ export default function Profile() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsBtn} onPress={handleLogout}>
+          <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/notifications' as any)}>
+          <Ionicons name="notifications-outline" size={24} color={Colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsBtn} onPress={async () => {
+          const { Share } = require('react-native');
+          await Share.share({
+            message: `Check out my profile on Amore! 💕
+Name: ${user?.name}
+ID: ${user?.id?.slice(0,8)}
+Download Amore to connect with me!`,
+            title: 'Share my Amore profile',
+          });
+        }}>
+          <Ionicons name="share-outline" size={24} color={Colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsBtn} onPress={handleLogout}>
             <Ionicons name="settings-outline" size={24} color={Colors.white} />
           </TouchableOpacity>
         </View>

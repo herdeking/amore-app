@@ -1,9 +1,28 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { useAuthStore } from '../../store/authStore';
+import { db } from '../../services/firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function TabsLayout() {
   const { bottom } = useSafeAreaInsets();
+  const { user } = useAuthStore();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifCount, setNotifCount] = useState(0);
+
+  // Live unread messages count
+  useEffect(() => {
+    if (!user?.id) return;
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.id),
+      where('read', '==', false)
+    );
+    const unsub = onSnapshot(q, snap => setNotifCount(snap.size));
+    return () => unsub();
+  }, [user?.id]);
   return (
     <Tabs screenOptions={{
       headerShown: false,
@@ -30,7 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="swipe" options={{ title: 'Discover', tabBarIcon: ({ color, size }) => <Ionicons name="albums" size={26} color={color} /> }} />
       <Tabs.Screen name="likes" options={{ title: 'Likes', tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={26} color={color} /> }} />
       <Tabs.Screen name="video" options={{ title: 'Video', tabBarIcon: ({ color, size }) => <Ionicons name="videocam" size={26} color={color} /> }} />
-      <Tabs.Screen name="matches" options={{ title: 'Messages', tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble" size={26} color={color} />, tabBarBadge: 17 }} />
+      <Tabs.Screen name="matches" options={{ title: 'Messages', tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble" size={26} color={color} />, tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={26} color={color} /> }} />
     </Tabs>
   );
