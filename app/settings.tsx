@@ -131,15 +131,23 @@ export default function Settings() {
               { text: "18 - 35", onPress: () => { setMinAge(18); setMaxAge(35); saveSetting({minAge: 18, maxAge: 35}); } },
               { text: "18 - 50", onPress: () => { setMinAge(18); setMaxAge(50); saveSetting({minAge: 18, maxAge: 50}); } },
               { text: "18 - 70", onPress: () => { setMinAge(18); setMaxAge(70); saveSetting({minAge: 18, maxAge: 70}); } },
+              { text: "25 - 45", onPress: () => { setMinAge(25); setMaxAge(45); saveSetting({minAge: 25, maxAge: 45}); } },
+              { text: "30 - 60", onPress: () => { setMinAge(30); setMaxAge(60); saveSetting({minAge: 30, maxAge: 60}); } },
+              { text: "40 - 80", onPress: () => { setMinAge(40); setMaxAge(80); saveSetting({minAge: 40, maxAge: 80}); } },
+              { text: "18 - 100 (Any age)", onPress: () => { setMinAge(18); setMaxAge(100); saveSetting({minAge: 18, maxAge: 100}); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
           <SettingRow icon="navigate-outline" label="Max distance" value={distance === 999 ? "Worldwide" : `${distance} km`} onPress={() => {
             Alert.alert("Max Distance", "Select max distance", [
+              { text: "5 km", onPress: () => { setDistance(5); saveSetting({distance: 5}); } },
               { text: "10 km", onPress: () => { setDistance(10); saveSetting({distance: 10}); } },
               { text: "25 km", onPress: () => { setDistance(25); saveSetting({distance: 25}); } },
               { text: "50 km", onPress: () => { setDistance(50); saveSetting({distance: 50}); } },
               { text: "100 km", onPress: () => { setDistance(100); saveSetting({distance: 100}); } },
+              { text: "250 km", onPress: () => { setDistance(250); saveSetting({distance: 250}); } },
+              { text: "500 km", onPress: () => { setDistance(500); saveSetting({distance: 500}); } },
+              { text: "🌍 Worldwide", onPress: () => { setDistance(999); saveSetting({distance: 999}); } },
               { text: "Cancel", style: "cancel" },
             ]);
           }} />
