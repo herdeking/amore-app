@@ -1,4 +1,5 @@
 import { db } from './firebase';
+import { increment, updateDoc, doc } from 'firebase/firestore';
 import { collection, addDoc, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
 export const recordProfileView = async (viewerId: string, profileId: string) => {

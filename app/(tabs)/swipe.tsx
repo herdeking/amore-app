@@ -108,6 +108,10 @@ export default function SwipeScreen() {
   const { profiles, swipe, matched, matchedUser, dismissMatch, refresh } = useSwipe();
   const [refreshing, setRefreshing] = useState(false);
   const [swipesLeft, setSwipesLeft] = useState<number>(DAILY_SWIPE_LIMIT);
+  const [lastSwipedUser, setLastSwipedUser] = useState<any>(null);
+  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [superAnim] = useState(new Animated.Value(0));
+  const [showSuperAnim, setShowSuperAnim] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -158,6 +162,27 @@ export default function SwipeScreen() {
         createdAt: new Date().toISOString(),
       });
     } catch {}
+  };
+
+  const triggerSuperAnim = () => {
+    setShowSuperAnim(true);
+    superAnim.setValue(0);
+    Animated.sequence([
+      Animated.spring(superAnim, { toValue: 1, useNativeDriver: true, tension: 50 }),
+      Animated.delay(800),
+      Animated.timing(superAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setShowSuperAnim(false));
+  };
+
+  const undoLastSwipe = () => {
+    if (!lastSwipedUser) {
+      Alert.alert('Nothing to undo', 'No recent swipe to undo');
+      return;
+    }
+    profiles.unshift(lastSwipedUser);
+    setCurrentIndex(prev => Math.max(0, prev - 1));
+    setLastSwipedUser(null);
+    setLastAction(null);
   };
 
   const handleSwipe = (action: 'like' | 'pass' | 'superlike') => {
@@ -521,12 +546,25 @@ export default function SwipeScreen() {
         <TouchableOpacity style={[styles.actionBtn, styles.passBtn]} onPress={() => handleSwipe('pass')}>
           <Text style={styles.actionIcon}>✕</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionBtn, styles.undoBtn]} onPress={undoLastSwipe}>
+          <Text style={styles.actionIcon}>↩</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={[styles.actionBtn, styles.superBtn]} onPress={() => handleSwipe('superlike')}>
           <Text style={styles.actionIcon}>⭐</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionBtn, styles.likeBtn]} onPress={() => handleSwipe('like')}>
           <Text style={styles.actionIcon}>♥</Text>
         </TouchableOpacity>
+
+        {/* Super like animation */}
+        {showSuperAnim && (
+          <Animated.View style={[styles.superAnimContainer, {
+            opacity: superAnim,
+            transform: [{ scale: superAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1.3, 1] }) }]
+          }]}>
+            <Text style={styles.superAnimText}>⭐ SUPER LIKE!</Text>
+          </Animated.View>
+        )}
       </View>
 
       {/* Match modal */}
@@ -578,6 +616,9 @@ const styles = StyleSheet.create({
   actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', elevation: 3, backgroundColor: Colors.white },
   passBtn: { borderWidth: 2, borderColor: '#FF6B6B' },
   superBtn: { borderWidth: 2, borderColor: '#FFD700' },
+  undoBtn: { borderWidth: 2, borderColor: '#aaa', width: 44, height: 44 },
+  superAnimContainer: { position: 'absolute' as const, top: -80, left: 0, right: 0, alignItems: 'center' as const },
+  superAnimText: { fontSize: 28, fontWeight: '800' as const, color: '#FFD700', textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 4 },
   likeBtn: { borderWidth: 2, borderColor: '#4CAF50' },
   actionIcon: { fontSize: 26 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

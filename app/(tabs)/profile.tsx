@@ -227,6 +227,22 @@ export default function Profile() {
           <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/notifications' as any)}>
           <Ionicons name="notifications-outline" size={24} color={Colors.white} />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => {
+          Alert.alert(
+            '👁 Profile Preview',
+            `This is how others see you:
+
+📸 ${user?.photos?.length ?? 0} photos
+👤 ${user?.name}, ${user?.age}
+📍 ${user?.location}
+💬 ${user?.bio || 'No bio yet'}
+
+${user?.isPremium ? '👑 VIP Profile' : 'Free Profile'}`,
+            [{ text: 'OK' }]
+          );
+        }}>
+          <Ionicons name="eye-outline" size={24} color={Colors.white} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.settingsBtn} onPress={async () => {
           const { Share } = require('react-native');
           await Share.share({
@@ -275,7 +291,7 @@ Download Amore to connect with me!`,
           </Text>
         </View>
 
-        {/* Following / Followers */}
+        {/* Following / Followers / Stats */}
         <View style={styles.followRow}>
           <TouchableOpacity style={styles.followItem}>
             <Text style={styles.followNum}>{user?.followingCount ?? 0}</Text>
@@ -284,7 +300,17 @@ Download Amore to connect with me!`,
           <View style={styles.followDivider} />
           <TouchableOpacity style={styles.followItem}>
             <Text style={styles.followNum}>{user?.followersCount ?? 0}</Text>
-            <Text style={styles.followLabel}>Follower</Text>
+            <Text style={styles.followLabel}>Followers</Text>
+          </TouchableOpacity>
+          <View style={styles.followDivider} />
+          <TouchableOpacity style={styles.followItem} onPress={() => router.push('/notifications' as any)}>
+            <Text style={styles.followNum}>{(user as any)?.likesCount ?? 0}</Text>
+            <Text style={styles.followLabel}>Likes</Text>
+          </TouchableOpacity>
+          <View style={styles.followDivider} />
+          <TouchableOpacity style={styles.followItem} onPress={() => router.push('/notifications' as any)}>
+            <Text style={styles.followNum}>{(user as any)?.viewsCount ?? 0}</Text>
+            <Text style={styles.followLabel}>Views</Text>
           </TouchableOpacity>
         </View>
 
@@ -383,6 +409,13 @@ Download Amore to connect with me!`,
                 onPress={() => {
                   Alert.alert('Photo Options', 'What would you like to do?', [
                     { text: 'Replace', onPress: () => pickPhoto(i) },
+                    { text: 'Set as Main', onPress: async () => {
+                        const reordered = [...(user?.photos ?? [])];
+                        const [selected] = reordered.splice(i, 1);
+                        reordered.unshift(selected);
+                        await updateDoc(doc(db, 'users', user!.id), { photos: reordered });
+                        setUser({ ...user, photos: reordered } as any);
+                    }},
                     { text: 'Delete', style: 'destructive', onPress: () => removePhoto(i) },
                     { text: 'Cancel', style: 'cancel' },
                   ]);
