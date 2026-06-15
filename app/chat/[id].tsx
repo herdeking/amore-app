@@ -239,6 +239,26 @@ export default function ChatScreen() {
   const [otherTyping, setOtherTyping] = React.useState(false);
   const [reactions, setReactions] = React.useState<Record<string, string>>({});
   const [reactionMsgId, setReactionMsgId] = React.useState<string | null>(null);
+  const [selectedMsgId, setSelectedMsgId] = React.useState<string | null>(null);
+
+  const fmtTime = (iso: string) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const deleteMessage = async (msgId: string) => {
+    if (!id || !isRealMatch) return;
+    try {
+      const { deleteDoc, doc: dDoc } = await import('firebase/firestore');
+      const { db: fdb } = await import('../../services/firebase');
+      await deleteDoc(dDoc(fdb, 'matches', id as string, 'messages', msgId));
+      setMessages((prev: any) => prev.filter((m: any) => m.id !== msgId));
+    } catch(e: any) {
+      Alert.alert('Error', e.message);
+    }
+    setSelectedMsgId(null);
+  };
 
   const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
 
@@ -327,7 +347,17 @@ export default function ChatScreen() {
                   <Image source={{ uri: matchPhoto }} style={styles.msgAvatar} />
                 )}
                 <TouchableOpacity
-                  onLongPress={() => setReactionMsgId(item.id)}
+                  onLongPress={() => {
+                    if (isMine(item.senderId)) {
+                      Alert.alert('Message', 'What would you like to do?', [
+                        { text: 'React', onPress: () => setReactionMsgId(item.id) },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteMessage(item.id) },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]);
+                    } else {
+                      setReactionMsgId(item.id);
+                    }
+                  }}
                   onPress={() => {}}
                   style={[styles.bubble, isMine(item.senderId) ? styles.bubbleMine : styles.bubbleOther]}
                 >
@@ -358,11 +388,10 @@ export default function ChatScreen() {
                   <Image source={{ uri: user?.photos?.[0] ?? matchPhoto }} style={styles.msgAvatar} />
                 )}
               </View>
-              {isMine(item.senderId) && (
-                <Text style={styles.tickText}>
-                  {(item as any).read ? '✓✓' : '✓'}
-                </Text>
-              )}
+              <Text style={[styles.msgTime, isMine(item.senderId) && styles.msgTimeMine]}>
+                {fmtTime(item.createdAt)}
+                {isMine(item.senderId) ? ((item as any).read ? ' ✓✓' : ' ✓') : ''}
+              </Text>
               {reactions[item.id] && (
                 <Text style={[styles.reactionBadge, isMine(item.senderId) && styles.reactionBadgeMine]}>
                   {reactions[item.id]}
@@ -553,7 +582,8 @@ const styles = StyleSheet.create({
   typingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 6 },
   typingBubble: { backgroundColor: '#f0f0f0', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
   typingDots: { fontSize: 18, color: '#999', letterSpacing: 2 },
-  tickText: { fontSize: 10, color: '#999', textAlign: 'right' as const, marginRight: 40, marginTop: -4, marginBottom: 4 },
+  msgTime: { fontSize: 10, color: '#aaa', marginLeft: 44, marginTop: 2, marginBottom: 4 },
+  msgTimeMine: { textAlign: 'right' as const, marginRight: 44, marginLeft: 0 },
   reactionBadge: { fontSize: 16, marginLeft: 40, marginTop: -8, marginBottom: 4 },
   reactionBadgeMine: { textAlign: 'right' as const, marginRight: 40, marginLeft: 0 },
   reactionOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 999 },

@@ -273,7 +273,7 @@ export default function SwipeScreen() {
             <View style={styles.cardNameRow}>
               <Text style={styles.cardName}>{current?.name}, {current?.age ?? calcAge(current?.dob ?? '')}</Text>
               {current?.isVerified && <Text style={styles.verifiedBadge}>✓</Text>}
-              <View style={styles.onlineDot} />
+              {(current?.isOnline) && <View style={styles.onlineDot} />}
               <View style={{ flex: 1 }} />
 
             </View>
