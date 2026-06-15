@@ -367,13 +367,17 @@ export default function SwipeScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.callIconBtn}
-                  onPress={() => Alert.alert('Voice Call 📞', `Calling ${current?.name}... (Feature coming soon)`)}
+                  onPress={() => {
+                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
+                  }}
                 >
                   <Ionicons name="call-outline" size={22} color={Colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.callIconBtn}
-                  onPress={() => Alert.alert('Video Call 📹', `Video calling ${current?.name}... (Feature coming soon)`)}
+                  onPress={() => {
+                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
+                  }}
                 >
                   <Ionicons name="videocam-outline" size={22} color={Colors.primary} />
                 </TouchableOpacity>

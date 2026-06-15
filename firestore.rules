@@ -146,6 +146,12 @@ service cloud.firestore {
       allow read, write: if isLoggedIn();
     }
 
+    // ── Broadcasts (admin only via email check) ──────────
+    match /broadcasts/{broadcastId} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn();
+    }
+
     // ── Block everything else ─────────────────────────
     match /{document=**} {
       allow read, write: if false;
