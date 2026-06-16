@@ -68,6 +68,49 @@ export default function MatchesScreen() {
   ];
 
   const [loading, setLoading] = useState(true);
+  const [realFriends, setRealFriends] = useState<any[]>([]);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    // Load real friends from follows
+    const loadFriends = async () => {
+      try {
+        const { getDocs, collection: col, query: q, where: wh } = await import('firebase/firestore');
+        const { db: fdb } = await import('../../services/firebase');
+        const snap = await getDocs(q(col(fdb, 'follows'), wh('followerId', '==', user.id)));
+        const friends = await Promise.all(snap.docs.map(async d => {
+          const uid = d.data().followedId;
+          const uSnap = await getDocs(q(col(fdb, 'users')));
+          const uDoc = uSnap.docs.find(u => u.id === uid);
+          if (!uDoc) return null;
+          return { id: uid, name: uDoc.data().name, photo: uDoc.data().photos?.[0], online: uDoc.data().isOnline, mutual: 0 };
+        }));
+        setRealFriends(friends.filter(Boolean));
+      } catch {}
+    };
+
+    // Load call history
+    const loadCalls = async () => {
+      try {
+        const { getDocs, collection: col, query: q, where: wh, orderBy: ob, limit: lm } = await import('firebase/firestore');
+        const { db: fdb } = await import('../../services/firebase');
+        const snap = await getDocs(q(col(fdb, 'calls'), wh('callerId', '==', user.id), lm(20)));
+        setCallHistory(snap.docs.map(d => ({
+          id: d.id,
+          name: d.data().callerName ?? 'Unknown',
+          photo: 'https://randomuser.me/api/portraits/women/1.jpg',
+          type: d.data().type ?? 'voice',
+          status: 'outgoing',
+          time: new Date(d.data().startedAt ?? Date.now()).toLocaleDateString(),
+          duration: null,
+        })));
+      } catch {}
+    };
+
+    loadFriends();
+    loadCalls();
+  }, [user?.id]);
 
   const loadMatches = React.useCallback(async () => {
     if (!user?.id) return;
@@ -175,7 +218,7 @@ export default function MatchesScreen() {
 
       {tab === "friends" && (
         <FlatList
-          data={DEMO_FRIENDS}
+          data={realFriends.length > 0 ? realFriends : DEMO_FRIENDS}
           keyExtractor={f => f.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
@@ -204,7 +247,7 @@ export default function MatchesScreen() {
 
       {tab === "calls" && (
         <FlatList
-          data={DEMO_CALLS}
+          data={callHistory.length > 0 ? callHistory : DEMO_CALLS}
           keyExtractor={c => c.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
@@ -221,7 +264,8 @@ export default function MatchesScreen() {
                 style={[styles.friendBtn, { backgroundColor: "#f0f0f0" }]}
                 onPress={() => Alert.alert("Call Back", `Call ${item.name}?`, [
                   { text: "Cancel", style: "cancel" },
-                  { text: "📞 Call", onPress: () => Alert.alert("Calling...", "VIP feature - upgrade for unlimited calls!") }
+                  { text: "📞 Voice", onPress: () => router.push({ pathname: `/call/${item.id}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, channelName: `call_${item.id}_${Date.now()}` }} as any) },
+                  { text: "📹 Video", onPress: () => router.push({ pathname: `/call/${item.id}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, channelName: `call_${item.id}_${Date.now()}` }} as any) },
                 ])}
               >
                 <Text style={{ fontSize: 18 }}>{item.type === "video" ? "📹" : "📞"}</Text>

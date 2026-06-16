@@ -35,6 +35,8 @@ export default function LikesScreen() {
   const freeViewLimit = 3;
   const [realLikes, setRealLikes] = useState<any[]>([]);
 
+  const [realViewers, setRealViewers] = useState<any[]>([]);
+
   useEffect(() => {
     if (!user?.id) return;
     fetchWhoLikedMe(user.id).then(users => {
@@ -45,6 +47,18 @@ export default function LikesScreen() {
         photo: u.photos?.[0] ?? 'https://randomuser.me/api/portraits/lego/1.jpg',
         location: u.location ?? '',
       })));
+    });
+
+    // Load real profile viewers
+    getProfileViewers(user.id, isPremium).then((viewers: any[]) => {
+      const mapped = viewers.map((v: any) => ({
+        id: v.viewerId ?? v.id,
+        name: v.viewerName ?? 'Someone',
+        age: 0,
+        photo: v.viewerPhoto ?? '',
+        location: '',
+      }));
+      setRealViewers(mapped);
     });
   }, [user?.id]);
 
@@ -126,7 +140,7 @@ export default function LikesScreen() {
       )}
 
       <FlatList
-        data={tab === "likes" ? likesData : DEMO_VIEWERS}
+        data={tab === "likes" ? likesData : (realViewers.length > 0 ? realViewers : DEMO_VIEWERS)}
         numColumns={2}
         keyExtractor={i => i.id}
         contentContainerStyle={styles.grid}

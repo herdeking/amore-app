@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
@@ -23,6 +24,7 @@ const DEMO_PROFILES = [
 ];
 
 export default function VideoScreen() {
+  const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [tab, setTab] = useState<"live" | "profiles">("live");
   const [uploading, setUploading] = useState(false);
@@ -48,19 +50,25 @@ export default function VideoScreen() {
     loadVideoProfiles();
   }, []);
 
-  const handleJoin = (name: string) => {
+  const handleJoin = (item: any) => {
     if (!user?.isPremium && liveJoined >= 3) {
       Alert.alert("VIP Feature 👑", "Free users can join 3 live streams per day. Upgrade to VIP for unlimited!", [
         { text: "Maybe Later", style: "cancel" },
-        { text: "👑 Become VIP" }
+        { text: "👑 Become VIP", onPress: () => router.push('/payment' as any) }
       ]);
       return;
     }
-    Alert.alert("Join " + name + "'s Live", "Free users get 10 seconds. Upgrade to VIP for unlimited!", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Join (10s free)", onPress: () => { setLiveJoined(prev => prev + 1); Alert.alert("Joined!", "You joined " + name + "'s live stream. 10 second free preview!"); } },
-      { text: "👑 Become VIP" },
-    ]);
+    setLiveJoined(prev => prev + 1);
+    // Join via Jitsi
+    router.push({
+      pathname: `/call/${item.id}`,
+      params: {
+        type: 'video',
+        callerId: user?.id,
+        callerName: user?.name,
+        channelName: `live_${item.id}`,
+      }
+    } as any);
   };
 
   const handleUploadVideoProfile = async () => {
@@ -116,7 +124,7 @@ export default function VideoScreen() {
           keyExtractor={i => i.id}
           contentContainerStyle={styles.grid}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => handleJoin(item.name)}>
+            <TouchableOpacity style={styles.card} onPress={() => handleJoin(item)}>
               <Image source={{ uri: item.photo }} style={styles.photo} />
               {item.isLive && <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE</Text></View>}
               <View style={styles.viewerBadge}><Text style={styles.viewerText}>👁 {item.viewers}</Text></View>
