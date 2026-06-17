@@ -38,6 +38,8 @@ export default function RootLayout() {
                   type: data.type,
                   callerId: data.callerId,
                   callerName: data.callerName,
+                  receiverId: data.receiverId ?? user?.id,
+                  receiverName: data.receiverName ?? user?.name,
                   channelName: data.channelName,
                 }
               } as any);

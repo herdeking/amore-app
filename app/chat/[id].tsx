@@ -73,7 +73,7 @@ export default function ChatScreen() {
         const snap = await getDocs(collection(db, 'matches', id, 'messages'));
         const unread = snap.docs.filter(d => {
           const data = d.data();
-          return data.senderId !== user.id && data.read === false;
+          return data.senderId !== user.id && !data.read;
         });
         if (unread.length === 0) return;
         const batch = writeBatch(db);
@@ -216,6 +216,8 @@ export default function ChatScreen() {
       setDoc(doc(db, 'callInvites', otherUser?.id ?? ''), {
         callerId: user?.id,
         callerName: user?.name,
+        receiverId: otherUser?.id,
+        receiverName: matchName,
         channelName,
         type,
         matchId: id,
@@ -228,6 +230,8 @@ export default function ChatScreen() {
         type,
         callerId: user?.id,
         callerName: user?.name,
+        receiverId: otherUser?.id,
+        receiverName: matchName,
         channelName,
       }
     } as any);
@@ -313,10 +317,8 @@ export default function ChatScreen() {
         <TouchableOpacity style={styles.followBtn} onPress={async () => {
           if (!otherUser?.id || !user?.id) return;
           try {
-            const { updateDoc, doc: fsDoc2, increment: inc } = await import('firebase/firestore');
-            const { db: fdb } = await import('../../services/firebase');
-            await updateDoc(fsDoc2(fdb, 'users', otherUser.id), { followersCount: inc(1) });
-            await updateDoc(fsDoc2(fdb, 'users', user.id), { followingCount: inc(1) });
+            const { followUser } = await import('../../services/followService');
+            await followUser(user.id, user.name || 'Someone', otherUser.id);
             Alert.alert('Following', `You are now following ${matchName}`);
           } catch(e: any) {
             Alert.alert('Error', e.message);
@@ -576,9 +578,9 @@ const styles = StyleSheet.create({
   videoCallBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFD700', marginHorizontal: 80, marginBottom: 8, paddingVertical: 12, borderRadius: 30, gap: 8 },
   videoCallIcon: { fontSize: 18 },
   videoCallText: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.white },
-  quickReplies: { paddingHorizontal: 12, paddingBottom: 6, gap: 6 },
-  quickReply: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
-  quickReplyText: { fontSize: 11, color: Colors.text },
+  quickReplies: { paddingHorizontal: 12, paddingBottom: 10, paddingTop: 4, gap: 8 },
+  quickReply: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
+  quickReplyText: { fontSize: 14, color: Colors.text, fontWeight: '500' as const },
   typingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 6 },
   typingBubble: { backgroundColor: '#f0f0f0', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
   typingDots: { fontSize: 18, color: '#999', letterSpacing: 2 },
@@ -591,7 +593,7 @@ const styles = StyleSheet.create({
   reactionEmoji: { fontSize: 28 },
   inputRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
   inputIcon: { padding: 4 },
-  input: { flex: 1, backgroundColor: '#F0F0F0', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 15, color: Colors.text, maxHeight: 100 },
+  input: { flex: 1, backgroundColor: '#F0F0F0', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: Colors.text, maxHeight: 100, minHeight: 44 },
   sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   sendBtnActive: { backgroundColor: Colors.primary },
   sendIcon: { color: Colors.white, fontSize: 16 },

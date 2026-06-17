@@ -393,7 +393,7 @@ export default function SwipeScreen() {
                 <TouchableOpacity
                   style={styles.callIconBtn}
                   onPress={() => {
-                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
+                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, receiverId: current.id, receiverName: current.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
                   }}
                 >
                   <Ionicons name="call-outline" size={22} color={Colors.primary} />
@@ -401,7 +401,7 @@ export default function SwipeScreen() {
                 <TouchableOpacity
                   style={styles.callIconBtn}
                   onPress={() => {
-                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
+                    if (current?.id) router.push({ pathname: `/call/${current.id}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, receiverId: current.id, receiverName: current.name, channelName: `call_${current.id}_${Date.now()}` }} as any);
                   }}
                 >
                   <Ionicons name="videocam-outline" size={22} color={Colors.primary} />
@@ -498,13 +498,12 @@ export default function SwipeScreen() {
                   onPress={async () => {
                     if (!current?.id || !user?.id) return;
                     try {
-                      await updateDoc(doc(db, 'users', current.id), { followersCount: increment(1) });
-                      await updateDoc(doc(db, 'users', user.id), { followingCount: increment(1) });
+                      const { followUser } = await import('../../services/followService');
+                      await followUser(user.id, user.name || 'Someone', current.id);
                       const mySnap = await getDoc(doc(db, 'users', user.id));
                       if (mySnap.exists()) {
                         setUser({ ...user, followingCount: mySnap.data().followingCount } as any);
                       }
-                      await createNotification(current.id, 'follow', user.name || 'Someone');
                       Alert.alert('Followed', `You are now following ${current?.name}`);
                     } catch (e: any) {
                       Alert.alert('Follow failed', e.message ?? 'Unknown error');

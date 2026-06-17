@@ -1,42 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Image,
   TouchableOpacity, TextInput, Alert, RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import AdBanner from '../../components/AdBanner';
 import { useAuthStore } from '../../store/authStore';
 import { fetchMatches, MatchWithUser } from '../../services/matchesService';
-import { useEffect } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { getMyFriends } from '../../services/followService';
+import { db } from '../../services/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import Stories from '../../components/stories/Stories';
-
-const DEMO_MATCHES = [
-  { id: '1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', lastMessage: 'Hey! How are you? 😊', time: '2m ago', unread: 0, online: true },
-  { id: '2', name: 'Chioma', photo: 'https://randomuser.me/api/portraits/women/2.jpg', lastMessage: 'Would love to meet up!', time: '15m ago', unread: 0, online: true },
-  { id: '3', name: 'Fatima', photo: 'https://randomuser.me/api/portraits/women/3.jpg', lastMessage: 'You look great in your photos', time: '1h ago', unread: 0, online: false },
-  { id: '4', name: 'Ngozi', photo: 'https://randomuser.me/api/portraits/women/4.jpg', lastMessage: 'Haha that is so funny 😂', time: '2h ago', unread: 0, online: true },
-  { id: '5', name: 'Blessing', photo: 'https://randomuser.me/api/portraits/women/5.jpg', lastMessage: 'What do you do for fun?', time: '3h ago', unread: 0, online: false },
-  { id: '6', name: 'Adaeze', photo: 'https://randomuser.me/api/portraits/women/6.jpg', lastMessage: 'I love hiking too! 🏔️', time: '5h ago', unread: 0, online: false },
-  { id: '7', name: 'Kemi', photo: 'https://randomuser.me/api/portraits/women/7.jpg', lastMessage: 'Can we talk later tonight?', time: '1d ago', unread: 0, online: true },
-  { id: '8', name: 'Tolu', photo: 'https://randomuser.me/api/portraits/women/8.jpg', lastMessage: 'Nice to match with you!', time: '1d ago', unread: 0, online: false },
-];
-
-const DEMO_FRIENDS = [
-  { id: 'f1', name: 'Halima', photo: 'https://randomuser.me/api/portraits/women/9.jpg', mutual: 3, online: true },
-  { id: 'f2', name: 'Uju', photo: 'https://randomuser.me/api/portraits/women/10.jpg', mutual: 1, online: false },
-  { id: 'f3', name: 'Sade', photo: 'https://randomuser.me/api/portraits/women/11.jpg', mutual: 5, online: true },
-  { id: 'f4', name: 'Ini', photo: 'https://randomuser.me/api/portraits/women/12.jpg', mutual: 2, online: false },
-];
-
-const DEMO_CALLS = [
-  { id: 'c1', name: 'Amara', photo: 'https://randomuser.me/api/portraits/women/1.jpg', type: 'video', status: 'missed', time: '06-07 07:12', duration: '' },
-  { id: 'c2', name: 'Chioma', photo: 'https://randomuser.me/api/portraits/women/2.jpg', type: 'voice', status: 'incoming', time: '06-06 14:30', duration: '5:23' },
-  { id: 'c3', name: 'Fatima', photo: 'https://randomuser.me/api/portraits/women/3.jpg', type: 'video', status: 'outgoing', time: '06-05 20:15', duration: '12:04' },
-];
 
 export default function MatchesScreen() {
   const router = useRouter();
@@ -45,74 +22,21 @@ export default function MatchesScreen() {
   const [tab, setTab] = useState<"messages" | "friends" | "calls">("messages");
   const [realMatches, setRealMatches] = useState<MatchWithUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchMatches(user?.id ?? '').then(setRealMatches);
-    setRefreshing(false);
-  };
-
-  const combinedMatches = [
-    ...realMatches.map(m => ({
-      id: m.matchId,
-      name: m.user.name || 'Unknown',
-      photo: m.user.photos?.[0] ?? 'https://randomuser.me/api/portraits/lego/1.jpg',
-      lastMessage: m.lastMessage ?? 'Say hello! 👋',
-      time: m.lastMessageTime ? new Date(m.lastMessageTime).toLocaleDateString() : 'New match',
-      unread: m.unread,
-      online: false,
-    })),
-    ...DEMO_MATCHES,
-  ];
-
   const [loading, setLoading] = useState(true);
-  const [realFriends, setRealFriends] = useState<any[]>([]);
+  const [friends, setFriends] = useState<any[]>([]);
   const [callHistory, setCallHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    // Load real friends from follows
-    const loadFriends = async () => {
-      try {
-        const { getDocs, collection: col, query: q, where: wh } = await import('firebase/firestore');
-        const { db: fdb } = await import('../../services/firebase');
-        const snap = await getDocs(q(col(fdb, 'follows'), wh('followerId', '==', user.id)));
-        const friends = await Promise.all(snap.docs.map(async d => {
-          const uid = d.data().followedId;
-          const uSnap = await getDocs(q(col(fdb, 'users')));
-          const uDoc = uSnap.docs.find(u => u.id === uid);
-          if (!uDoc) return null;
-          return { id: uid, name: uDoc.data().name, photo: uDoc.data().photos?.[0], online: uDoc.data().isOnline, mutual: 0 };
-        }));
-        setRealFriends(friends.filter(Boolean));
-      } catch {}
-    };
+  const combinedMatches = realMatches.map(m => ({
+    id: m.matchId,
+    name: m.user.name || 'Unknown',
+    photo: m.user.photos?.[0] ?? 'https://randomuser.me/api/portraits/lego/1.jpg',
+    lastMessage: m.lastMessage ?? 'Say hello! 👋',
+    time: m.lastMessageTime ? new Date(m.lastMessageTime).toLocaleDateString() : 'New match',
+    unread: m.unread,
+    online: false,
+  }));
 
-    // Load call history
-    const loadCalls = async () => {
-      try {
-        const { getDocs, collection: col, query: q, where: wh, orderBy: ob, limit: lm } = await import('firebase/firestore');
-        const { db: fdb } = await import('../../services/firebase');
-        const snap = await getDocs(q(col(fdb, 'calls'), wh('callerId', '==', user.id), lm(20)));
-        setCallHistory(snap.docs.map(d => ({
-          id: d.id,
-          name: d.data().callerName ?? 'Unknown',
-          photo: 'https://randomuser.me/api/portraits/women/1.jpg',
-          type: d.data().type ?? 'voice',
-          status: 'outgoing',
-          time: new Date(d.data().startedAt ?? Date.now()).toLocaleDateString(),
-          duration: null,
-        })));
-      } catch {}
-    };
-
-    loadFriends();
-    loadCalls();
-  }, [user?.id]);
-
-  const loadMatches = React.useCallback(async () => {
+  const loadMatches = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     const m = await fetchMatches(user.id);
@@ -120,20 +44,68 @@ export default function MatchesScreen() {
     setLoading(false);
   }, [user?.id]);
 
+  const loadFriends = useCallback(async () => {
+    if (!user?.id) return;
+    const f = await getMyFriends(user.id);
+    setFriends(f);
+  }, [user?.id]);
+
+  const loadCallHistory = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const q = query(
+        collection(db, 'callHistory'),
+        where('participants', 'array-contains', user.id),
+        orderBy('startedAt', 'desc'),
+        limit(30)
+      );
+      const snap = await getDocs(q);
+      const calls = snap.docs.map(d => {
+        const data = d.data();
+        const isOutgoing = data.callerId === user.id;
+        return {
+          id: d.id,
+          name: isOutgoing ? (data.receiverName ?? 'Unknown') : (data.callerName ?? 'Unknown'),
+          otherId: isOutgoing ? data.receiverId : data.callerId,
+          type: data.type ?? 'voice',
+          status: isOutgoing ? 'outgoing' : 'incoming',
+          duration: data.duration ?? 0,
+          time: data.startedAt ? new Date(data.startedAt).toLocaleString() : '',
+        };
+      });
+      setCallHistory(calls);
+    } catch (e) {
+      console.log('loadCallHistory error:', e);
+    }
+  }, [user?.id]);
+
   useEffect(() => { loadMatches(); }, [user?.id]);
 
-  // Refresh unread counts every time user comes back to this screen
-  useFocusEffect(React.useCallback(() => {
+  useFocusEffect(useCallback(() => {
     loadMatches();
-  }, [loadMatches]));
+    loadFriends();
+    loadCallHistory();
+  }, [loadMatches, loadFriends, loadCallHistory]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([loadMatches(), loadFriends(), loadCallHistory()]);
+    setRefreshing(false);
+  };
 
   const filtered = combinedMatches.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const formatCallDuration = (secs: number) => {
+    if (!secs) return '';
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Messages 💕</Text>
         <TouchableOpacity style={styles.filterBtn}>
@@ -141,11 +113,9 @@ export default function MatchesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Stories */}
       <Stories currentUser={user} />
       <View style={{ height: 1, backgroundColor: '#f0f0f0' }} />
 
-      {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity style={[styles.tab, tab === "messages" && styles.tabActive]} onPress={() => setTab("messages")}>
           <Text style={[styles.tabText, tab === "messages" && styles.tabTextActive]}>Messages</Text>
@@ -174,18 +144,18 @@ export default function MatchesScreen() {
             />
           </View>
           <FlatList
-          ListEmptyComponent={
-            !loading ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>💕</Text>
-                <Text style={styles.emptyTitle}>No matches yet</Text>
-                <Text style={styles.emptySub}>Start swiping to find your match!</Text>
-                <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(tabs)/swipe' as any)}>
-                  <Text style={styles.emptyBtnText}>Start Swiping →</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null
-          }
+            ListEmptyComponent={
+              !loading ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyIcon}>💕</Text>
+                  <Text style={styles.emptyTitle}>No matches yet</Text>
+                  <Text style={styles.emptySub}>Start swiping to find your match!</Text>
+                  <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(tabs)/swipe' as any)}>
+                    <Text style={styles.emptyBtnText}>Start Swiping →</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null
+            }
             data={filtered}
             keyExtractor={m => m.id}
             renderItem={({ item }) => (
@@ -218,9 +188,17 @@ export default function MatchesScreen() {
 
       {tab === "friends" && (
         <FlatList
-          data={realFriends.length > 0 ? realFriends : DEMO_FRIENDS}
+          data={friends}
           keyExtractor={f => f.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>👥</Text>
+              <Text style={styles.emptyTitle}>No friends yet</Text>
+              <Text style={styles.emptySub}>Follow people from their profile to see them here</Text>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={styles.friendRow}>
               <View style={styles.avatarContainer}>
@@ -229,16 +207,16 @@ export default function MatchesScreen() {
               </View>
               <View style={styles.chatInfo}>
                 <Text style={styles.chatName}>{item.name}</Text>
-                <Text style={{ fontSize: 12, color: Colors.textLight }}>{item.mutual} mutual friends</Text>
+                <Text style={{ fontSize: 12, color: item.online ? '#4CAF50' : Colors.textLight }}>
+                  {item.online ? '● Online' : 'Offline'}
+                </Text>
               </View>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <TouchableOpacity
-                  style={[styles.friendBtn, { backgroundColor: Colors.primary }]}
-                  onPress={() => router.push(`/chat/${item.id}`)}
-                >
-                  <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>Message</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[styles.friendBtn, { backgroundColor: Colors.primary }]}
+                onPress={() => router.push(`/chat/${item.id}`)}
+              >
+                <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>Message</Text>
+              </TouchableOpacity>
             </View>
           )}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -247,25 +225,35 @@ export default function MatchesScreen() {
 
       {tab === "calls" && (
         <FlatList
-          data={callHistory.length > 0 ? callHistory : DEMO_CALLS}
+          data={callHistory}
           keyExtractor={c => c.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📞</Text>
+              <Text style={styles.emptyTitle}>No call history</Text>
+              <Text style={styles.emptySub}>Calls you make or receive will show here</Text>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={styles.callRow}>
-              <Image source={{ uri: item.photo }} style={styles.avatar} />
+              <View style={[styles.avatar, styles.callAvatarPlaceholder]}>
+                <Text style={{ fontSize: 22 }}>{item.type === 'video' ? '📹' : '📞'}</Text>
+              </View>
               <View style={styles.chatInfo}>
                 <Text style={styles.chatName}>{item.name}</Text>
-                <Text style={{ fontSize: 12, color: item.status === "missed" ? Colors.primary : Colors.textLight }}>
-                  {item.status === "missed" ? "↗ Missed" : item.status === "incoming" ? "↙ Incoming" : "↗ Outgoing"} {item.type === "video" ? "📹" : "📞"} · {item.time}
+                <Text style={{ fontSize: 12, color: Colors.textLight }}>
+                  {item.status === "incoming" ? "↙ Incoming" : "↗ Outgoing"} {item.type === "video" ? "📹" : "📞"} · {item.time}
                 </Text>
-                {item.duration ? <Text style={{ fontSize: 11, color: Colors.textLight }}>Duration: {item.duration}</Text> : null}
+                {item.duration ? <Text style={{ fontSize: 11, color: Colors.textLight }}>Duration: {formatCallDuration(item.duration)}</Text> : null}
               </View>
               <TouchableOpacity
                 style={[styles.friendBtn, { backgroundColor: "#f0f0f0" }]}
                 onPress={() => Alert.alert("Call Back", `Call ${item.name}?`, [
                   { text: "Cancel", style: "cancel" },
-                  { text: "📞 Voice", onPress: () => router.push({ pathname: `/call/${item.id}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, channelName: `call_${item.id}_${Date.now()}` }} as any) },
-                  { text: "📹 Video", onPress: () => router.push({ pathname: `/call/${item.id}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, channelName: `call_${item.id}_${Date.now()}` }} as any) },
+                  { text: "📞 Voice", onPress: () => router.push({ pathname: `/call/${item.otherId}`, params: { type: 'voice', callerId: user?.id, callerName: user?.name, receiverId: item.otherId, receiverName: item.name, channelName: `call_${item.otherId}_${Date.now()}` }} as any) },
+                  { text: "📹 Video", onPress: () => router.push({ pathname: `/call/${item.otherId}`, params: { type: 'video', callerId: user?.id, callerName: user?.name, receiverId: item.otherId, receiverName: item.name, channelName: `call_${item.otherId}_${Date.now()}` }} as any) },
                 ])}
               >
                 <Text style={{ fontSize: 18 }}>{item.type === "video" ? "📹" : "📞"}</Text>
@@ -301,6 +289,7 @@ const styles = StyleSheet.create({
   callRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, gap: 12 },
   avatarContainer: { position: "relative" },
   avatar: { width: 56, height: 56, borderRadius: 28 },
+  callAvatarPlaceholder: { backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center' },
   onlineDotChat: { position: "absolute", bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: "#4CAF50", borderWidth: 2, borderColor: Colors.white },
   chatInfo: { flex: 1 },
   chatTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
@@ -312,7 +301,7 @@ const styles = StyleSheet.create({
   unreadText: { fontSize: 11, color: Colors.white, fontWeight: Theme.fontWeight.bold },
   separator: { height: 1, backgroundColor: Colors.border, marginLeft: 20 },
   friendBtn: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  emptyState: { alignItems: 'center' as const, justifyContent: 'center' as const, padding: 48, gap: 12 },
+  emptyState: { alignItems: 'center' as const, justifyContent: 'center' as const, padding: 48, gap: 12, flex: 1 },
   emptyIcon: { fontSize: 56 },
   emptyTitle: { fontSize: 20, fontWeight: '700' as const, color: '#333' },
   emptySub: { fontSize: 14, color: '#999', textAlign: 'center' as const },

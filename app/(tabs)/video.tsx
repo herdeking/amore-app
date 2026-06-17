@@ -1,72 +1,171 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+// app/(tabs)/video.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, Modal, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useAuthStore } from '../../store/authStore';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { uploadToCloudinary } from '../../services/cloudinary';
 
-const DEMO_LIVE = [
-  { id: "1", name: "Amara", photo: "https://randomuser.me/api/portraits/women/1.jpg", viewers: 234, isLive: true, bio: "Artist & dreamer ✨" },
-  { id: "2", name: "Chioma", photo: "https://randomuser.me/api/portraits/women/2.jpg", viewers: 89, isLive: true, bio: "Coffee addict ☕" },
-  { id: "3", name: "Fatima", photo: "https://randomuser.me/api/portraits/women/3.jpg", viewers: 512, isLive: true, bio: "Yoga & wellness 🧘" },
-  { id: "4", name: "Ngozi", photo: "https://randomuser.me/api/portraits/women/4.jpg", viewers: 45, isLive: false, bio: "Foodie & traveler 🌍" },
-  { id: "5", name: "Blessing", photo: "https://randomuser.me/api/portraits/women/5.jpg", viewers: 178, isLive: true, bio: "Music lover 🎵" },
-  { id: "6", name: "Adaeze", photo: "https://randomuser.me/api/portraits/women/6.jpg", viewers: 320, isLive: false, bio: "Tech girl 💻" },
-];
+interface LiveStream {
+  userId: string;
+  userName: string;
+  userPhoto: string;
+  channelName: string;
+  startedAt: string;
+}
 
-const DEMO_PROFILES = [
-  { id: "p1", name: "Kemi", photo: "https://randomuser.me/api/portraits/women/7.jpg", age: 25, location: "Lagos" },
-  { id: "p2", name: "Tolu", photo: "https://randomuser.me/api/portraits/women/8.jpg", age: 23, location: "Abuja" },
-  { id: "p3", name: "Halima", photo: "https://randomuser.me/api/portraits/women/9.jpg", age: 27, location: "Kano" },
-];
+interface VideoProfile {
+  id: string;
+  name: string;
+  age: number;
+  location: string;
+  photo: string;
+  videoUrl: string;
+}
+
+function VideoPlayerModal({ video, onClose }: { video: VideoProfile; onClose: () => void }) {
+  const player = useVideoPlayer(video.videoUrl, p => {
+    p.loop = true;
+    p.play();
+  });
+
+  return (
+    <Modal visible animationType="fade" onRequestClose={onClose}>
+      <View style={styles.playerContainer}>
+        <TouchableOpacity style={styles.playerClose} onPress={onClose}>
+          <Ionicons name="close" size={30} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.playerTitle}>{video.name}'s Intro</Text>
+        <VideoView style={styles.playerVideo} player={player} contentFit="contain" nativeControls />
+        <Text style={styles.playerLocation}>📍 {video.location}</Text>
+      </View>
+    </Modal>
+  );
+}
 
 export default function VideoScreen() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [tab, setTab] = useState<"live" | "profiles">("live");
   const [uploading, setUploading] = useState(false);
-  const [liveJoined, setLiveJoined] = useState(0);
-  const [realVideoProfiles, setRealVideoProfiles] = useState<any[]>([]);
+  const [liveStreams, setLiveStreams] = useState<LiveStream[]>([]);
+  const [videoProfiles, setVideoProfiles] = useState<VideoProfile[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<VideoProfile | null>(null);
+  const [goingLive, setGoingLive] = useState(false);
 
-  React.useEffect(() => {
-    const loadVideoProfiles = async () => {
-      try {
-        const { getDocs, collection: col, where: wh, query: q } = await import('firebase/firestore');
-        const snap = await getDocs(q(col(db, 'users'), wh('videoProfile', '!=', null)));
-        const profiles = snap.docs.map(d => ({
-          id: d.id,
-          name: d.data().name,
-          age: d.data().age,
-          location: d.data().location,
-          photo: d.data().photos?.[0],
-          videoUrl: d.data().videoProfile,
-        })).filter(p => p.videoUrl);
-        setRealVideoProfiles(profiles);
-      } catch {}
-    };
-    loadVideoProfiles();
+  const myStream = liveStreams.find(s => s.userId === user?.id);
+
+  const loadVideoProfiles = useCallback(async () => {
+    try {
+      const snap = await onSnapshotOnce();
+    } catch {}
   }, []);
 
-  const handleJoin = (item: any) => {
-    if (!user?.isPremium && liveJoined >= 3) {
-      Alert.alert("VIP Feature 👑", "Free users can join 3 live streams per day. Upgrade to VIP for unlimited!", [
-        { text: "Maybe Later", style: "cancel" },
-        { text: "👑 Become VIP", onPress: () => router.push('/payment' as any) }
-      ]);
+  const onSnapshotOnce = async () => {
+    const { getDocs } = await import('firebase/firestore');
+    const snap = await getDocs(query(collection(db, 'users'), where('videoProfile', '!=', null)));
+    const profiles = snap.docs.map(d => ({
+      id: d.id,
+      name: d.data().name,
+      age: d.data().age,
+      location: d.data().location,
+      photo: d.data().photos?.[0],
+      videoUrl: d.data().videoProfile,
+    })).filter(p => p.videoUrl) as VideoProfile[];
+    setVideoProfiles(profiles);
+  };
+
+  useEffect(() => {
+    onSnapshotOnce();
+  }, []);
+
+  // Real-time live streams
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'liveStreams'), (snap) => {
+      setLiveStreams(snap.docs.map(d => d.data() as LiveStream));
+    });
+    return () => unsub();
+  }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await onSnapshotOnce();
+    setRefreshing(false);
+  };
+
+  const handleGoLive = async () => {
+    if (!user?.id) return;
+    if (myStream) {
+      // Already live - rejoin
+      router.push({
+        pathname: `/call/${user.id}`,
+        params: {
+          type: 'video',
+          callerId: user.id,
+          callerName: user.name,
+          channelName: myStream.channelName,
+          isLive: 'true',
+        }
+      } as any);
       return;
     }
-    setLiveJoined(prev => prev + 1);
-    // Join via Jitsi
+
+    Alert.alert('Go Live 🔴', 'Start a live video broadcast? Other users will be able to join and watch you.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Go Live',
+        onPress: async () => {
+          setGoingLive(true);
+          try {
+            const channelName = `live_${user.id}_${Date.now()}`;
+            await setDoc(doc(db, 'liveStreams', user.id), {
+              userId: user.id,
+              userName: user.name,
+              userPhoto: user.photos?.[0] ?? '',
+              channelName,
+              startedAt: new Date().toISOString(),
+            });
+            router.push({
+              pathname: `/call/${user.id}`,
+              params: {
+                type: 'video',
+                callerId: user.id,
+                callerName: user.name,
+                channelName,
+                isLive: 'true',
+              }
+            } as any);
+          } catch (e: any) {
+            Alert.alert('Error', e.message);
+          } finally {
+            setGoingLive(false);
+          }
+        }
+      }
+    ]);
+  };
+
+  const handleJoinLive = (stream: LiveStream) => {
+    if (stream.userId === user?.id) {
+      handleGoLive();
+      return;
+    }
     router.push({
-      pathname: `/call/${item.id}`,
+      pathname: `/call/${stream.userId}`,
       params: {
         type: 'video',
-        callerId: user?.id,
-        callerName: user?.name,
-        channelName: `live_${item.id}`,
+        callerId: stream.userId,
+        callerName: stream.userName,
+        receiverId: user?.id,
+        receiverName: user?.name,
+        channelName: stream.channelName,
+        isLive: 'true',
       }
     } as any);
   };
@@ -75,7 +174,7 @@ export default function VideoScreen() {
     if (!user?.isPremium) {
       Alert.alert("VIP Feature 👑", "Upload a video profile to get 5x more matches! Upgrade to VIP.", [
         { text: "Maybe Later", style: "cancel" },
-        { text: "Become VIP 👑" }
+        { text: "Become VIP 👑", onPress: () => router.push('/payment' as any) }
       ]);
       return;
     }
@@ -91,6 +190,8 @@ export default function VideoScreen() {
         await updateDoc(doc(db, 'users', user?.id ?? ''), { videoProfile: videoUrl });
         setUser({ ...user, videoProfile: videoUrl } as any);
         Alert.alert("Video Uploaded! 🎉", "Your 15-second video profile is now live. You will get more matches!");
+        await onSnapshotOnce();
+        setTab("profiles");
       } catch (e: any) {
         Alert.alert("Error", e.message);
       } finally {
@@ -103,9 +204,14 @@ export default function VideoScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Video 📹</Text>
-        <TouchableOpacity style={styles.uploadBtn} onPress={handleUploadVideoProfile}>
-          <Text style={styles.uploadBtnText}>{uploading ? "Uploading..." : "+ My Video"}</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.liveBtn} onPress={handleGoLive} disabled={goingLive}>
+            <Text style={styles.liveBtnText}>{myStream ? '🔴 Live' : goingLive ? '...' : '🔴 Go Live'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.uploadBtn} onPress={handleUploadVideoProfile}>
+            <Text style={styles.uploadBtnText}>{uploading ? "Uploading..." : "+ My Video"}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabs}>
@@ -119,42 +225,44 @@ export default function VideoScreen() {
 
       {tab === "live" ? (
         <FlatList
-          data={DEMO_LIVE}
+          data={liveStreams}
           numColumns={2}
-          keyExtractor={i => i.id}
+          keyExtractor={i => i.userId}
           contentContainerStyle={styles.grid}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔴</Text>
+              <Text style={styles.emptyTitle}>No one is live right now</Text>
+              <Text style={styles.emptySub}>Be the first to go live!</Text>
+            </View>
+          }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => handleJoin(item)}>
-              <Image source={{ uri: item.photo }} style={styles.photo} />
-              {item.isLive && <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE</Text></View>}
-              <View style={styles.viewerBadge}><Text style={styles.viewerText}>👁 {item.viewers}</Text></View>
+            <TouchableOpacity style={styles.card} onPress={() => handleJoinLive(item)}>
+              <Image source={{ uri: item.userPhoto }} style={styles.photo} />
+              <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE</Text></View>
               <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.bio}>{item.bio}</Text>
+                <Text style={styles.name}>{item.userName}</Text>
               </View>
             </TouchableOpacity>
           )}
         />
       ) : (
         <FlatList
-          data={[...realVideoProfiles, ...DEMO_PROFILES]}
+          data={videoProfiles}
           numColumns={2}
           keyExtractor={i => i.id}
           contentContainerStyle={styles.grid}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🎬</Text>
+              <Text style={styles.emptyTitle}>No video profiles yet</Text>
+              <Text style={styles.emptySub}>Upload yours to be the first!</Text>
+            </View>
+          }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => {
-              const idx = DEMO_PROFILES.findIndex(p => p.id === item.id);
-              if (!user?.isPremium && idx >= 2) {
-                Alert.alert("VIP Feature 👑", "Free users can watch 2 video profiles. Upgrade to VIP to watch all!", [
-                  { text: "Maybe Later", style: "cancel" },
-                  { text: "👑 Become VIP" }
-                ]);
-                return;
-              }
-              Alert.alert("▶ " + item.name + "'s Video", "Playing " + item.name + "'s 15-second intro...", [
-                { text: "Close", style: "cancel" }
-              ]);
-            }}>
+            <TouchableOpacity style={styles.card} onPress={() => setSelectedVideo(item)}>
               <Image source={{ uri: item.photo }} style={styles.photo} />
               <View style={styles.playBtn}><Text style={{ fontSize: 24 }}>▶</Text></View>
               <View style={styles.info}>
@@ -165,30 +273,47 @@ export default function VideoScreen() {
           )}
         />
       )}
+
+      {selectedVideo && (
+        <VideoPlayerModal
+          key={selectedVideo.id}
+          video={selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 12 },
   title: { fontSize: 24, fontWeight: "bold", color: "#FF4B6E" },
-  uploadBtn: { backgroundColor: "#FF4B6E", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  uploadBtnText: { color: "#fff", fontSize: 13, fontWeight: "bold" },
-  tabs: { flexDirection: "row", marginHorizontal: 16, marginBottom: 12, backgroundColor: "#f5f5f5", borderRadius: 12, padding: 4 },
+  liveBtn: { backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#FF3B30", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
+  liveBtnText: { color: "#FF3B30", fontWeight: "700", fontSize: 12 },
+  uploadBtn: { backgroundColor: "#FF4B6E", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  uploadBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  tabs: { flexDirection: "row", marginHorizontal: 16, marginBottom: 8, backgroundColor: "#f5f5f5", borderRadius: 12, padding: 4 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center" },
   tabActive: { backgroundColor: "#fff", elevation: 2 },
   tabText: { fontSize: 13, color: "#999", fontWeight: "600" },
   tabTextActive: { color: "#FF4B6E" },
-  grid: { padding: 12, gap: 12 },
-  card: { flex: 1, margin: 6, borderRadius: 16, overflow: "hidden", backgroundColor: "#000", elevation: 3, height: 220 },
-  photo: { width: "100%", height: "100%", resizeMode: "cover", opacity: 0.85 },
-  liveBadge: { position: "absolute", top: 10, left: 10, backgroundColor: "#FF4B4B", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-  liveText: { color: "#fff", fontSize: 11, fontWeight: "bold" },
-  viewerBadge: { position: "absolute", top: 10, right: 10, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-  viewerText: { color: "#fff", fontSize: 11 },
-  playBtn: { position: "absolute", top: "35%", alignSelf: "center", backgroundColor: "rgba(255,255,255,0.8)", borderRadius: 30, width: 50, height: 50, alignItems: "center", justifyContent: "center" },
-  info: { position: "absolute", bottom: 10, left: 10 },
-  name: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  bio: { color: "rgba(255,255,255,0.8)", fontSize: 11, marginTop: 2 },
+  grid: { padding: 8, flexGrow: 1 },
+  card: { flex: 1, margin: 6, borderRadius: 16, overflow: "hidden", backgroundColor: "#f9f9f9", elevation: 3, aspectRatio: 0.8 },
+  photo: { width: "100%", height: "100%", position: "absolute" },
+  liveBadge: { position: "absolute", top: 8, left: 8, backgroundColor: "#FF3B30", borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  liveText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  playBtn: { position: "absolute", top: "40%", left: "40%", backgroundColor: "rgba(0,0,0,0.4)", borderRadius: 24, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+  info: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10, backgroundColor: "rgba(0,0,0,0.5)" },
+  name: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  bio: { color: "#eee", fontSize: 11, marginTop: 2 },
+  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80, gap: 8 },
+  emptyIcon: { fontSize: 56 },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#333" },
+  emptySub: { fontSize: 13, color: "#999" },
+  playerContainer: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
+  playerClose: { position: "absolute", top: 50, right: 16, zIndex: 10 },
+  playerTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  playerVideo: { width: "100%", height: 400 },
+  playerLocation: { color: "#ccc", fontSize: 13, marginTop: 12 },
 });
