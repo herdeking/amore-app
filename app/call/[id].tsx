@@ -94,7 +94,7 @@ export default function CallScreen() {
   };
 
   const roomName = `amore-${channel}`.replace(/[^a-zA-Z0-9-]/g, "-");
-  const jitsiUrl = `https://meet.jit.si/${roomName}#userInfo.displayName="${encodeURIComponent(user?.name ?? "User")}"&config.startWithVideoMuted=${!isVideo}&config.startWithAudioMuted=false&config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.disableInviteFunctions=true`;
+  const jitsiUrl = `https://meet.jit.si/${roomName}#userInfo.displayName="${encodeURIComponent(user?.name ?? "User")}"&config.startWithVideoMuted=${!isVideo}&config.startWithAudioMuted=false&config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.toolbarButtons=microphone,camera,hangup,chat,tileview&config.disableVirtualBackground=true&config.disableProfile=true&config.disableAddingBackgroundImages=true`;
 
   return (
     <SafeAreaView style={styles.container}>
