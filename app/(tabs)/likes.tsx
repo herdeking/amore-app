@@ -5,7 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { getProfileViewers } from '../../services/profileViews';
 import { fetchWhoLikedMe } from '../../services/likesService';
-import { recordSwipe } from '../../services/swipeService';
+import { recordSwipe, getOrCreateMatch } from '../../services/swipeService';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 
@@ -63,7 +63,7 @@ export default function LikesScreen() {
     return (
       <TouchableOpacity
         style={styles.card}
-        onPress={() => {
+        onPress={async () => {
           if (isLocked) {
             Alert.alert("VIP Feature 👑", "Upgrade to VIP to see everyone who viewed your profile!", [
               { text: "Maybe Later", style: "cancel" },
@@ -71,7 +71,9 @@ export default function LikesScreen() {
             ]);
             return;
           }
-          router.push(`/chat/${item.id}`);
+          if (!user?.id) return;
+          const matchId = await getOrCreateMatch(user.id, item.id);
+          router.push(`/chat/${matchId}`);
         }}
       >
         {isLocked ? (
@@ -95,14 +97,16 @@ export default function LikesScreen() {
             style={styles.likeBtn}
             onPress={async () => {
               if (isViewer) {
-                router.push(`/chat/${item.id}`);
+                if (!user?.id) return;
+                const matchId = await getOrCreateMatch(user.id, item.id);
+                router.push(`/chat/${matchId}`);
                 return;
               }
               if (!user?.id) return;
               const result = await recordSwipe({ userId: user.id, targetId: item.id, action: 'like' });
               if (result.matched) {
                 Alert.alert("It's a Match! 🎉", `You and ${item.name} liked each other!`, [
-                  { text: 'Send Message', onPress: () => router.push(`/chat/${item.id}`) },
+                  { text: 'Send Message', onPress: async () => { if (!user?.id) return; const matchId = await getOrCreateMatch(user.id, item.id); router.push(`/chat/${matchId}`); } },
                   { text: 'OK' },
                 ]);
               } else {

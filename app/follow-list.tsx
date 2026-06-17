@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { getFollowers, getMyFriends } from '../services/followService';
+import { getOrCreateMatch } from '../services/swipeService';
 import { Colors } from '../constants/colors';
 
 export default function FollowListScreen() {
@@ -52,7 +53,11 @@ export default function FollowListScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.row} onPress={() => router.push(`/chat/${item.id}`)}>
+            <TouchableOpacity style={styles.row} onPress={async () => {
+              if (!user?.id) return;
+              const matchId = await getOrCreateMatch(user.id, item.id);
+              router.push(`/chat/${matchId}`);
+            }}>
               {item.photo ? (
                 <Image source={{ uri: item.photo }} style={styles.avatar} />
               ) : (

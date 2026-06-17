@@ -32,7 +32,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState(DEMO_MESSAGES);
   const [text, setText] = useState('');
   const flatListRef = useRef<FlatList>(null);
-  const [aiLoading, setAiLoading] = useState(false);
+
   const [showGifts, setShowGifts] = useState(false);
   const [translatedMsgs, setTranslatedMsgs] = useState<Record<string, string>>({});
   const [otherUser, setOtherUser] = useState<any>(null);
@@ -174,39 +174,6 @@ export default function ChatScreen() {
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }
-  };
-
-  const handleAIReply = async () => {
-    const lastOther = [...messages].reverse().find(m => !isMine(m.senderId));
-    if (!lastOther) {
-      Alert.alert('AI Reply', 'No message to reply to yet!');
-      return;
-    }
-    setAiLoading(true);
-    const { reply, error } = await getAIReply(user?.id ?? '', user?.isPremium ?? false, matchProfile, lastOther.text);
-    setAiLoading(false);
-    if (error) {
-      Alert.alert('Limit Reached 👑', error, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Become VIP 👑', style: 'default' }
-      ]);
-      return;
-    }
-    setText(reply);
-  };
-
-  const handleIcebreakers = async () => {
-    setAiLoading(true);
-    const suggestions = await getIcebreakers(user?.id ?? '', user?.isPremium ?? false, matchProfile);
-    setAiLoading(false);
-    Alert.alert(
-      '🤖 AI Suggestions',
-      'Pick an opening line:',
-      [
-        ...suggestions.map((s: string) => ({ text: s, onPress: () => setText(s) })),
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
   };
 
   const handleCall = (type: 'voice' | 'video') => {
@@ -457,9 +424,7 @@ export default function ChatScreen() {
             placeholderTextColor={Colors.textLight}
             multiline
           />
-          <TouchableOpacity style={styles.inputIcon} onPress={messages.length <= 2 ? handleIcebreakers : handleAIReply} disabled={aiLoading}>
-            <Text>{aiLoading ? '⏳' : '🤖'}</Text>
-          </TouchableOpacity>
+
           <TouchableOpacity style={styles.inputIcon} onPress={async () => {
             const ImagePicker = require('expo-image-picker');
             const result = await ImagePicker.launchImageLibraryAsync({
