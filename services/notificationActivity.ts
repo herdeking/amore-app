@@ -1,19 +1,30 @@
 import { db } from './firebase';
-import { collection, addDoc, query, where, getDocs, limit, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, limit, updateDoc, doc } from 'firebase/firestore';
 import { sendLocalNotification } from './notifications';
+
+const MESSAGES: Record<string, (name: string) => { title: string; body: string }> = {
+  follow: (name) => ({ title: 'New Follower 👥', body: `${name} started following you!` }),
+  like: (name) => ({ title: 'New Like ❤️', body: `${name} liked your profile!` }),
+  match: (name) => ({ title: "It's a Match! 🎉", body: `You matched with ${name}!` }),
+};
 
 export const createNotification = async (
   userId: string,
   type: 'follow' | 'like' | 'match' | 'message',
-  fromName: string
+  fromUserName: string,
+  fromUserId?: string
 ) => {
   try {
+    const { body: message } = MESSAGES[type] ? MESSAGES[type](fromUserName) : { body: `${fromUserName} sent you a notification` };
     await addDoc(collection(db, 'notifications'), {
       userId,
       type,
-      fromName,
+      fromUserId: fromUserId ?? null,
+      fromUserName,
+      message,
       createdAt: new Date().toISOString(),
       read: false,
+      pushSent: false,
     });
   } catch {}
 };
@@ -23,33 +34,20 @@ export const checkAndShowNotifications = async (userId: string) => {
     const q = query(
       collection(db, 'notifications'),
       where('userId', '==', userId),
-      where('read', '==', false),
+      where('pushSent', '==', false),
       limit(10)
     );
     const snap = await getDocs(q);
 
     for (const docSnap of snap.docs) {
       const data = docSnap.data();
-      let title = '';
-      let body = '';
-      switch (data.type) {
-        case 'follow':
-          title = 'New Follower 👥';
-          body = `${data.fromName} started following you!`;
-          break;
-        case 'like':
-          title = 'New Like ❤️';
-          body = `${data.fromName} liked your profile!`;
-          break;
-        case 'match':
-          title = "It's a Match! 🎉";
-          body = `You matched with ${data.fromName}!`;
-          break;
-        default:
-          continue;
-      }
+      const name = data.fromUserName ?? data.fromName ?? 'Someone';
+      const fallback = MESSAGES[data.type] ? MESSAGES[data.type](name) : null;
+      const title = fallback?.title ?? 'Amore';
+      const body = data.message ?? fallback?.body ?? `${name} sent you a notification`;
+
       await sendLocalNotification(title, body);
-      await deleteDoc(doc(db, 'notifications', docSnap.id));
+      await updateDoc(doc(db, 'notifications', docSnap.id), { pushSent: true }).catch(() => {});
     }
   } catch {}
 };

@@ -37,15 +37,24 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     if (!user?.id) return;
+    // Avoid composite index requirement: filter only, sort client-side
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', user.id),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.id)
     );
-    const unsub = onSnapshot(q, snap => {
-      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(list);
+        setLoading(false);
+      },
+      err => {
+        console.log('notifications onSnapshot error:', err);
+        setLoading(false);
+      }
+    );
     return () => unsub();
   }, [user?.id]);
 

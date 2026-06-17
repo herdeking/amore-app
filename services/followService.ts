@@ -43,6 +43,31 @@ export const isFollowing = async (followerId: string, followedId: string): Promi
   return snap.exists();
 };
 
+export const getFollowers = async (userId: string) => {
+  try {
+    const q = query(collection(db, 'follows'), where('followedId', '==', userId));
+    const snap = await getDocs(q);
+    const followers = await Promise.all(
+      snap.docs.map(async d => {
+        const followerId = d.data().followerId;
+        const uSnap = await getDoc(doc(db, 'users', followerId));
+        if (!uSnap.exists()) return null;
+        const data = uSnap.data();
+        return {
+          id: followerId,
+          name: data.name ?? 'Unknown',
+          photo: data.photos?.[0] ?? '',
+          online: data.isOnline ?? false,
+        };
+      })
+    );
+    return followers.filter(Boolean);
+  } catch (e) {
+    console.log('getFollowers error:', e);
+    return [];
+  }
+};
+
 export const getMyFriends = async (userId: string) => {
   try {
     const q = query(collection(db, 'follows'), where('followerId', '==', userId));

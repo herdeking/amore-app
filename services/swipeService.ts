@@ -83,7 +83,7 @@ export const recordSwipe = async (action: SwipeAction): Promise<{ matched: boole
       try {
         const meSnap = await getDoc(doc(db, 'users', action.userId));
         const myName = meSnap.exists() ? (meSnap.data().name ?? 'Someone') : 'Someone';
-        await createNotification(action.targetId, 'match', myName);
+        await createNotification(action.targetId, 'match', myName, action.userId);
       } catch {}
 
       return { matched: true, matchId: matchRef.id };
@@ -92,7 +92,7 @@ export const recordSwipe = async (action: SwipeAction): Promise<{ matched: boole
       try {
         const meSnap = await getDoc(doc(db, 'users', action.userId));
         const myName = meSnap.exists() ? (meSnap.data().name ?? 'Someone') : 'Someone';
-        await createNotification(action.targetId, 'like', myName);
+        await createNotification(action.targetId, 'like', myName, action.userId);
       } catch {}
     }
     return { matched: false };

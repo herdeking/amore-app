@@ -293,12 +293,12 @@ Download Amore to connect with me!`,
 
         {/* Following / Followers / Stats */}
         <View style={styles.followRow}>
-          <TouchableOpacity style={styles.followItem}>
+          <TouchableOpacity style={styles.followItem} onPress={() => router.push({ pathname: '/follow-list', params: { type: 'following' } } as any)}>
             <Text style={styles.followNum}>{user?.followingCount ?? 0}</Text>
             <Text style={styles.followLabel}>Following</Text>
           </TouchableOpacity>
           <View style={styles.followDivider} />
-          <TouchableOpacity style={styles.followItem}>
+          <TouchableOpacity style={styles.followItem} onPress={() => router.push({ pathname: '/follow-list', params: { type: 'followers' } } as any)}>
             <Text style={styles.followNum}>{user?.followersCount ?? 0}</Text>
             <Text style={styles.followLabel}>Followers</Text>
           </TouchableOpacity>

@@ -38,7 +38,7 @@ export default function ChatScreen() {
   const [otherUser, setOtherUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const [showChatProfile, setShowChatProfile] = useState(false);
-  const isRealMatch = !id?.startsWith('1') && !id?.startsWith('2') && !id?.startsWith('3') && !id?.startsWith('4') && !id?.startsWith('5') && !id?.startsWith('6') && !id?.startsWith('7') && !id?.startsWith('8') && id?.length > 10;
+  const isRealMatch = typeof id === 'string' && !/^d\d+$/.test(id) && id.length >= 15;
 
   useEffect(() => {
     if (!isRealMatch || !user?.id || !id) return;
