@@ -35,6 +35,14 @@
           "androidAppId": "ca-app-pub-5150043080807634~8176811403",
           "iosAppId": "ca-app-pub-5150043080807634~8176811403"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
       ]
     ],
     "newArchEnabled": false,
