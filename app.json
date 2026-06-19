@@ -46,7 +46,8 @@
             "gradlePluginVersion": "8.4.2"
           }
         }
-      ]
+      ],
+      "./plugins/withJitsiGradleFix.js"
     ],
     "newArchEnabled": false,
     "splash": {
