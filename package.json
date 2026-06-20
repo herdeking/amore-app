@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "@amplitude/analytics-react-native": "1.4.13",
     "@expo/vector-icons": "^15.0.2",
     "@giphy/react-native-sdk": "5.0.1",
     "@jitsi/react-native-sdk": "^12.1.4",
