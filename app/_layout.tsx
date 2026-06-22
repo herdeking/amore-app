@@ -33,14 +33,15 @@ export default function RootLayout() {
             onPress: async () => {
               await deleteDoc(doc(db, 'callInvites', user.id));
               router.push({
-                pathname: `/call/${data.matchId}`,
+                pathname: `/call/${data.matchId ?? data.callId}`,
                 params: {
                   type: data.type,
                   callerId: data.callerId,
                   callerName: data.callerName,
                   receiverId: data.receiverId ?? user?.id,
                   receiverName: data.receiverName ?? user?.name,
-                  channelName: data.channelName,
+                  channelName: data.channelName ?? data.callId,
+                  isAnswering: 'true',
                 }
               } as any);
             }

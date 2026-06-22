@@ -176,6 +176,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── WebRTC Call Sessions ───────────────────────────
+    match /callSessions/{callId} {
+      allow read, write: if isLoggedIn();
+      match /{subcollection}/{docId} {
+        allow read, write: if isLoggedIn();
+      }
+    }
+
     // ── Block everything else ─────────────────────────
     match /{document=**} {
       allow read, write: if false;
