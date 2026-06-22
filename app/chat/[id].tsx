@@ -371,11 +371,17 @@ export default function ChatScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         />
 
-        {/* Video call button */}
-        <TouchableOpacity style={styles.videoCallBtn} onPress={() => handleCall('video')}>
-          <Text style={styles.videoCallIcon}>📞</Text>
-          <Text style={styles.videoCallText}>Video call</Text>
-        </TouchableOpacity>
+        {/* Call buttons */}
+        <View style={styles.callBtnRow}>
+          <TouchableOpacity style={[styles.callBtn, styles.voiceCallBtn]} onPress={() => handleCall('voice')}>
+            <Text style={styles.callBtnIcon}>📞</Text>
+            <Text style={styles.callBtnText}>Voice</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.callBtn, styles.videoCallBtn2]} onPress={() => handleCall('video')}>
+            <Text style={styles.callBtnIcon}>📹</Text>
+            <Text style={styles.callBtnText}>Video</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Gift picker */}
         {showGifts && (
@@ -540,7 +546,12 @@ const styles = StyleSheet.create({
   bubbleMine: { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
   bubbleText: { fontSize: 15, color: Colors.text, lineHeight: 22 },
   bubbleTextMine: { color: Colors.white },
-  videoCallBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFD700', marginHorizontal: 80, marginBottom: 8, paddingVertical: 12, borderRadius: 30, gap: 8 },
+  callBtnRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 8, gap: 10 },
+  callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 30, gap: 6 },
+  voiceCallBtn: { backgroundColor: '#4CAF50' },
+  videoCallBtn2: { backgroundColor: '#FFD700' },
+  callBtnIcon: { fontSize: 16 },
+  callBtnText: { fontWeight: '700' as const, fontSize: 14, color: '#fff' },
   videoCallIcon: { fontSize: 18 },
   videoCallText: { fontSize: 16, fontWeight: Theme.fontWeight.bold, color: Colors.white },
   quickReplies: { paddingHorizontal: 12, paddingBottom: 10, paddingTop: 4, gap: 8 },

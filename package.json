@@ -37,6 +37,7 @@
     "react-native-screens": "^4.25.2",
     "react-native-sound": "https://github.com/jitsi/react-native-sound.git#ea13c97b5c2a4ff5e0d9bacbd9ff5e4457fe2c3c",
     "react-native-svg": "^15.15.4",
+    "react-native-webrtc": "^124.0.7",
     "react-native-webview": "13.16.1",
     "react-native-worklets-core": "https://github.com/jitsi/react-native-worklets-core.git#8c5dfab2a5907305da8971696a781b60f0f9cb18",
     "zustand": "^5.0.14"
