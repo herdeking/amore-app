@@ -14,6 +14,8 @@ import { collection, query, where, getDocs, writeBatch, doc as fsDoc, setDoc, se
 import { recordProfileView } from '../../services/profileViews';
 import { sendLocalNotification } from '../../services/notifications';
 import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
+import { VoiceRecordButton } from '../../components/chat/VoiceRecordButton';
+import { VoiceMessagePlayer } from '../../components/chat/VoiceMessagePlayer';
 import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
@@ -55,10 +57,22 @@ export default function ChatScreen() {
       if (!isFirstLoad && msgs.length > messages.length) {
         const newest = msgs[msgs.length - 1];
         if (newest.senderId !== user?.id) {
-          sendLocalNotification(`${matchName} 💬`, newest.text);
+          const senderName = otherUser?.name ?? 'New message';
+          sendLocalNotification(`${senderName} 💬`, newest.text, 'messages');
         }
       }
       setMessages(msgs as any);
+      // Sync reactions from Firestore into local state
+      const reactionMap: Record<string, string> = {};
+      msgs.forEach((m: any) => {
+        if (m.reactions && typeof m.reactions === 'object') {
+          const entries = Object.values(m.reactions) as string[];
+          if (entries.length > 0) reactionMap[m.id] = entries[entries.length - 1];
+        }
+      });
+      if (Object.keys(reactionMap).length > 0) {
+        setReactions(prev => ({ ...prev, ...reactionMap }));
+      }
       isFirstLoad = false;
     });
     return () => unsub();
@@ -87,9 +101,42 @@ export default function ChatScreen() {
   const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? 'Loading...' : 'User')) : 'Sonia';
   const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
   const matchPhoto = otherUser?.photos?.[0] ?? 'https://randomuser.me/api/portraits/women/1.jpg';
-  const isOnline = otherUser?.isOnline ?? false;
-  const lastSeenText = isOnline ? '● Online' : otherUser?.lastSeen
-    ? `Last seen ${new Date(otherUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+  const [isOnline, setIsOnline] = React.useState(otherUser?.isOnline ?? false);
+  const [lastSeen, setLastSeen] = React.useState<string | null>(otherUser?.lastSeen ?? null);
+
+  // Real-time online status listener
+  React.useEffect(() => {
+    if (!otherUser?.id) return;
+    const { doc: fsDoc2, onSnapshot: fsSnap2 } = require('firebase/firestore');
+    const unsub = fsSnap2(fsDoc2(db, 'users', otherUser.id), (snap: any) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      setIsOnline(data.isOnline ?? false);
+      setLastSeen(data.lastSeen ?? null);
+    });
+    return () => unsub();
+  }, [otherUser?.id]);
+
+  // Update current user online/offline status
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const { doc: fsDoc3, updateDoc: fsUpdate3 } = require('firebase/firestore');
+    // Mark online on mount
+    fsUpdate3(fsDoc3(db, 'users', user.id), {
+      isOnline: true,
+      lastSeen: new Date().toISOString(),
+    }).catch(() => {});
+    // Mark offline on unmount
+    return () => {
+      fsUpdate3(fsDoc3(db, 'users', user.id), {
+        isOnline: false,
+        lastSeen: new Date().toISOString(),
+      }).catch(() => {});
+    };
+  }, [user?.id]);
+
+  const lastSeenText = isOnline ? '● Online' : lastSeen
+    ? `Last seen ${new Date(lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : '● Offline';
 
   const send = () => {
@@ -208,6 +255,19 @@ export default function ChatScreen() {
 
   // ── Typing indicator state ──
   const [otherTyping, setOtherTyping] = React.useState(false);
+
+  const handleVoiceMessage = async (uri: string, duration: number) => {
+    try {
+      const { uploadToCloudinary } = require('../../services/cloudinary');
+      const url = await uploadToCloudinary(uri);
+      const msgText = `🎤 [Voice](${url})|${duration}`;
+      if (isRealMatch && user?.id && id) {
+        sendMessage(id, user.id, msgText).catch(() => {});
+      }
+    } catch (e: any) {
+      Alert.alert('Upload failed', e.message);
+    }
+  };
   const [reactions, setReactions] = React.useState<Record<string, string>>({});
   const [reactionMsgId, setReactionMsgId] = React.useState<string | null>(null);
   const [selectedMsgId, setSelectedMsgId] = React.useState<string | null>(null);
@@ -233,9 +293,19 @@ export default function ChatScreen() {
 
   const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
 
-  const addReaction = (msgId: string, emoji: string) => {
+  const addReaction = async (msgId: string, emoji: string) => {
     setReactions(prev => ({ ...prev, [msgId]: emoji }));
     setReactionMsgId(null);
+    // Persist to Firestore
+    if (isRealMatch && id) {
+      try {
+        const { doc: fDoc, updateDoc: fUpdate } = await import('firebase/firestore');
+        const { db: fdb } = await import('../../services/firebase');
+        await fUpdate(fDoc(fdb, 'matches', id as string, 'messages', msgId), {
+          [`reactions.${user?.id}`]: emoji,
+        });
+      } catch {}
+    }
   };
   const typingTimeoutRef = React.useRef<any>(null);
 
@@ -341,6 +411,17 @@ export default function ChatScreen() {
                         />
                       );
                     }
+                    // Voice message
+                    const voiceMatch = item.text.match(/🎤 \[Voice\]\((https?:\/\/[^)]+)\)\|(\d+)/);
+                    if (voiceMatch) {
+                      return (
+                        <VoiceMessagePlayer
+                          uri={voiceMatch[1]}
+                          isMine={isMine(item.senderId)}
+                          duration={parseInt(voiceMatch[2])}
+                        />
+                      );
+                    }
                     return (
                       <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
                         {item.text}
@@ -431,6 +512,7 @@ export default function ChatScreen() {
             multiline
           />
 
+          <VoiceRecordButton onRecordingComplete={handleVoiceMessage} />
           <TouchableOpacity style={styles.inputIcon} onPress={async () => {
             const ImagePicker = require('expo-image-picker');
             const result = await ImagePicker.launchImageLibraryAsync({

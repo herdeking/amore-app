@@ -11,11 +11,13 @@ import { auth, db } from '../services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/colors';
+import { useTheme } from '../hooks/useTheme';
 import { Theme } from '../constants/theme';
 
 export default function Settings() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { isDark, toggleTheme, colors } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const { setUser } = useAuthStore();
   const [matches, setMatches] = useState(true);

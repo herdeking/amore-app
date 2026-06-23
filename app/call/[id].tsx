@@ -11,6 +11,7 @@ import { useAuthStore } from "../../store/authStore";
 import { db } from "../../services/firebase";
 import { doc, addDoc, collection, deleteDoc } from "firebase/firestore";
 import { WebRTCCall, CallType } from "../../services/webrtcService";
+import InCallManager from "react-native-incall-manager";
 
 const FREE_CALL_LIMIT = 30;
 const { width, height } = Dimensions.get("window");
@@ -47,6 +48,11 @@ export default function CallScreen() {
 
   const initCall = async () => {
     try {
+      // Force audio through speaker, enable proximity sensor
+      InCallManager.start({ media: isVideo ? 'video' : 'audio', auto: true, ringback: '' });
+      InCallManager.setForceSpeakerphoneOn(true);
+      InCallManager.setSpeakerphoneOn(true);
+
       const webrtc = new WebRTCCall(callId, user?.id ?? "");
       callRef.current = webrtc;
 
@@ -111,6 +117,7 @@ export default function CallScreen() {
 
   const endCall = async (navigate = true) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    try { InCallManager.stop(); } catch {}
     try {
       await callRef.current?.endCall();
     } catch {}
@@ -215,7 +222,12 @@ export default function CallScreen() {
         )}
 
         {!isVideo && (
-          <TouchableOpacity style={[styles.controlBtn, isSpeaker && styles.controlBtnActive]} onPress={() => setIsSpeaker(p => !p)}>
+          <TouchableOpacity style={[styles.controlBtn, isSpeaker && styles.controlBtnActive]} onPress={() => {
+          const next = !isSpeaker;
+          setIsSpeaker(next);
+          InCallManager.setForceSpeakerphoneOn(next);
+          InCallManager.setSpeakerphoneOn(next);
+        }}>
             <Ionicons name={isSpeaker ? "volume-high" : "volume-low"} size={26} color="#fff" />
             <Text style={styles.controlLabel}>Speaker</Text>
           </TouchableOpacity>

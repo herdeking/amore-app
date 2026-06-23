@@ -12,7 +12,10 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../../services/cloudinary';
 import { auth, db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
+import * as Haptics from 'expo-haptics';
+import { Linking } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { ProfileCompletionTips } from '../../components/profile/ProfileCompletionTips';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../constants/theme';
 
@@ -55,6 +58,18 @@ export default function Profile() {
   const { user, setUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [savingBanner, setSavingBanner] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const requestAppRating = () => {
+    Alert.alert(
+      'Enjoying Amore? 💕',
+      'Rate us on the Play Store to help others find love!',
+      [
+        { text: 'Maybe Later', style: 'cancel' },
+        { text: '⭐ Rate Now', onPress: () => Linking.openURL('market://details?id=com.herdeking.amoreapp') },
+      ]
+    );
+  };
   const [editField, setEditField] = useState<string | null>(null);
   const [showAnthemModal, setShowAnthemModal] = useState(false);
   const [anthemText, setAnthemText] = useState('');
@@ -224,7 +239,10 @@ export default function Profile() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/notifications' as any)}>
+          <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/search' as any)}>
+          <Ionicons name="search-outline" size={24} color={Colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/notifications' as any)}>
           <Ionicons name="notifications-outline" size={24} color={Colors.white} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.settingsBtn} onPress={() => {

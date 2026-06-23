@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Animated, PanResponder,
-  Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView, Alert
+  Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal, ScrollView, Alert, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSwipe } from '../../hooks/useSwipe';
+import * as Haptics from 'expo-haptics';
 import { getOrCreateMatch } from '../../services/swipeService';
 import { createNotification } from '../../services/notificationActivity';
 import { collection, addDoc, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
@@ -37,6 +38,7 @@ const calcAge = (dobStr: string): number => {
 };
 
 import { calculateMatchScore, getScoreColor, getScoreLabel } from '../../services/matchScore';
+import { Analytics } from '../../services/analyticsService';
 import { SwipeCardSkeleton } from '../../components/ui/Skeleton';
 
 // ── Confetti piece component ──
@@ -109,6 +111,15 @@ export default function SwipeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [swipesLeft, setSwipesLeft] = useState<number>(DAILY_SWIPE_LIMIT);
   const [lastSwipedUser, setLastSwipedUser] = useState<any>(null);
+  const [filterInterest, setFilterInterest] = useState<string | null>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const INTEREST_OPTIONS = ['Music', 'Travel', 'Food', 'Art', 'Tech', 'Gaming', 'Fitness',
+    'Reading', 'Cooking', 'Dancing', 'Yoga', 'Photography', 'Fashion', 'Movies', 'Sports'];
+
+  const filteredProfiles = filterInterest
+    ? profiles.filter(p => (p.interests ?? []).includes(filterInterest))
+    : profiles;
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [superAnim] = useState(new Animated.Value(0));
   const [showSuperAnim, setShowSuperAnim] = useState(false);
@@ -188,6 +199,19 @@ export default function SwipeScreen() {
   const handleSwipe = (action: 'like' | 'pass' | 'superlike') => {
     const target = profiles[currentIndex];
     if (!target) return;
+
+    // Haptic feedback
+    if (action === 'like') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Analytics.swipeLike(target.id);
+    } else if (action === 'superlike') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Analytics.swipeSuperLike(target.id);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Analytics.swipePass(target.id);
+    }
+
     const x = action === 'pass' ? -SW * 1.5 : SW * 1.5;
     Animated.timing(position, { toValue: { x, y: 0 }, duration: 300, useNativeDriver: false }).start(() => {
       swipe(target.id, action);
@@ -197,8 +221,8 @@ export default function SwipeScreen() {
     });
   };
 
-  const current: User | undefined = profiles[currentIndex];
-  const next: User | undefined = profiles[currentIndex + 1];
+  const current: User | undefined = filteredProfiles[currentIndex];
+  const next: User | undefined = filteredProfiles[currentIndex + 1];
 
   if (!profiles.length) {
     return (
@@ -215,7 +239,7 @@ export default function SwipeScreen() {
     );
   }
 
-  if (currentIndex >= profiles.length) {
+  if (currentIndex >= filteredProfiles.length) {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.logo}>Amore 💕</Text>
@@ -242,6 +266,12 @@ export default function SwipeScreen() {
           <Text style={styles.swipeCounter}>{swipesLeft}/{DAILY_SWIPE_LIMIT} swipes</Text>
         )}
         <TouchableOpacity
+          style={[styles.filterBtn, filterInterest && { backgroundColor: Colors.primary }]}
+          onPress={() => setShowFilterModal(true)}
+        >
+          <Ionicons name="options-outline" size={18} color={filterInterest ? '#fff' : Colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.filterBtn}
           onPress={async () => {
             setRefreshing(true);
@@ -254,6 +284,24 @@ export default function SwipeScreen() {
         </TouchableOpacity>
       </View>
 
+      <ScrollView
+        contentContainerStyle={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await refresh();
+              setCurrentIndex(0);
+              setRefreshing(false);
+            }}
+            colors={['#FF4B6E']}
+            tintColor="#FF4B6E"
+          />
+        }
+        scrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.cardContainer}>
         {/* Next card */}
         {next && (
@@ -337,6 +385,7 @@ export default function SwipeScreen() {
           </TouchableOpacity>
         </Animated.View>
       </View>
+      </ScrollView>
 
       {/* Profile Detail Modal */}
       <Modal visible={showProfile} animationType="slide" onRequestClose={() => setShowProfile(false)}
@@ -565,6 +614,35 @@ export default function SwipeScreen() {
           </Animated.View>
         )}
       </View>
+
+      {/* Filter by interests modal */}
+      <Modal visible={showFilterModal} transparent animationType="slide" onRequestClose={() => setShowFilterModal(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 16 }}>Filter by Interest</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+              <TouchableOpacity
+                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: !filterInterest ? Colors.primary : '#f0f0f0' }}
+                onPress={() => { setFilterInterest(null); setShowFilterModal(false); setCurrentIndex(0); }}
+              >
+                <Text style={{ color: !filterInterest ? '#fff' : Colors.text, fontWeight: '600' }}>All</Text>
+              </TouchableOpacity>
+              {INTEREST_OPTIONS.map(interest => (
+                <TouchableOpacity
+                  key={interest}
+                  style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: filterInterest === interest ? Colors.primary : '#f0f0f0' }}
+                  onPress={() => { setFilterInterest(interest); setShowFilterModal(false); setCurrentIndex(0); }}
+                >
+                  <Text style={{ color: filterInterest === interest ? '#fff' : Colors.text, fontWeight: '600' }}>{interest}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={{ alignItems: 'center', padding: 12 }} onPress={() => setShowFilterModal(false)}>
+              <Text style={{ color: Colors.primary, fontWeight: '600' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Match modal */}
       {matched && matchedUser && (

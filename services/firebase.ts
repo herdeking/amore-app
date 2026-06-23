@@ -33,3 +33,5 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const rtdb = getDatabase(app);
 export default app;
+
+// Analytics initialized lazily in analyticsService.ts
