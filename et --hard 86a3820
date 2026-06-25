@@ -1,0 +1,13 @@
+[33m9e21a42[m Revert "feat: verified badge - selfie upload, pending state, admin review doc"
+[33m585bd2a[m fix: remove Firebase analytics to fix crash
+[33mfc32688[m feat: add analytics to swipe and login screens safely
+[33m2ea1bfe[m fix: revert _layout.tsx to last working version to isolate crash
+[33ma15a452[m fix: robust notification setup with try/catch, add expo-notifications plugin back
+[33mb8b5c4b[m fix: remove expo-notifications plugin causing native crash
+[33m8a66c4a[m fix: merge duplicate react-native imports in _layout.tsx
+[33m3b2dc7e[m fix: lazy load expo-av to prevent native crash on startup
+[33m49e2d18[m fix: add expo-av and expo-notifications to app.json plugins, fix native crash
+[33m8a8e9a8[m fix: add ErrorBoundary to show crash reason on screen
+[33m86a3820[m fix: analytics web-only guard to prevent force close on Android
+[33m1356aa0[m feat: verified badge - selfie upload, pending state, admin review doc
+[33m8478757[m feat: notification fixes, haptics, dark mode, rating prompt, pull-to-refresh, voice messages, reactions, online status, profile tips, Firebase analytics
