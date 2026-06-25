@@ -12,7 +12,6 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../../services/cloudinary';
 import { auth, db } from '../../services/firebase';
 import { useAuthStore } from '../../store/authStore';
-import * as Haptics from 'expo-haptics';
 import { Linking } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { ProfileCompletionTips } from '../../components/profile/ProfileCompletionTips';

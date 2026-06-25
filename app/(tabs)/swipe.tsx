@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSwipe } from '../../hooks/useSwipe';
-import * as Haptics from 'expo-haptics';
 import { getOrCreateMatch } from '../../services/swipeService';
 import { createNotification } from '../../services/notificationActivity';
 import { collection, addDoc, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
@@ -202,13 +201,10 @@ export default function SwipeScreen() {
 
     // Haptic feedback
     if (action === 'like') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Analytics.swipeLike(target.id);
     } else if (action === 'superlike') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Analytics.swipeSuperLike(target.id);
     } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       Analytics.swipePass(target.id);
     }
 

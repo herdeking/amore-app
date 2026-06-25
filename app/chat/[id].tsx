@@ -14,8 +14,6 @@ import { collection, query, where, getDocs, writeBatch, doc as fsDoc, setDoc, se
 import { recordProfileView } from '../../services/profileViews';
 import { sendLocalNotification } from '../../services/notifications';
 import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
-import { VoiceRecordButton } from '../../components/chat/VoiceRecordButton';
-import { VoiceMessagePlayer } from '../../components/chat/VoiceMessagePlayer';
 import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
@@ -256,18 +254,6 @@ export default function ChatScreen() {
   // ── Typing indicator state ──
   const [otherTyping, setOtherTyping] = React.useState(false);
 
-  const handleVoiceMessage = async (uri: string, duration: number) => {
-    try {
-      const { uploadToCloudinary } = require('../../services/cloudinary');
-      const url = await uploadToCloudinary(uri);
-      const msgText = `🎤 [Voice](${url})|${duration}`;
-      if (isRealMatch && user?.id && id) {
-        sendMessage(id, user.id, msgText).catch(() => {});
-      }
-    } catch (e: any) {
-      Alert.alert('Upload failed', e.message);
-    }
-  };
   const [reactions, setReactions] = React.useState<Record<string, string>>({});
   const [reactionMsgId, setReactionMsgId] = React.useState<string | null>(null);
   const [selectedMsgId, setSelectedMsgId] = React.useState<string | null>(null);
@@ -411,17 +397,6 @@ export default function ChatScreen() {
                         />
                       );
                     }
-                    // Voice message
-                    const voiceMatch = item.text.match(/🎤 \[Voice\]\((https?:\/\/[^)]+)\)\|(\d+)/);
-                    if (voiceMatch) {
-                      return (
-                        <VoiceMessagePlayer
-                          uri={voiceMatch[1]}
-                          isMine={isMine(item.senderId)}
-                          duration={parseInt(voiceMatch[2])}
-                        />
-                      );
-                    }
                     return (
                       <Text style={[styles.bubbleText, isMine(item.senderId) && styles.bubbleTextMine]}>
                         {item.text}
@@ -512,7 +487,6 @@ export default function ChatScreen() {
             multiline
           />
 
-          <VoiceRecordButton onRecordingComplete={handleVoiceMessage} />
           <TouchableOpacity style={styles.inputIcon} onPress={async () => {
             const ImagePicker = require('expo-image-picker');
             const result = await ImagePicker.launchImageLibraryAsync({
