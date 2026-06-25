@@ -6,7 +6,6 @@ import { auth, db } from '../services/firebase';
 import { useAuthStore } from '../store/authStore';
 import { registerForPushNotifications } from '../services/notifications';
 import { checkAndShowNotifications } from '../services/notificationActivity';
-import { checkMatchAnniversaries } from '../services/anniversaryService';
 
 export const useAuth = () => {
   const { setUser, setFirebaseUid, setLoading, firebaseUid } = useAuthStore();
@@ -26,7 +25,6 @@ export const useAuth = () => {
             }
             registerForPushNotifications(firebaseUser.uid).catch(() => {});
             checkAndShowNotifications(firebaseUser.uid).catch(() => {});
-            checkMatchAnniversaries(firebaseUser.uid, firebaseUser.displayName ?? 'Someone').catch(() => {});
           } catch {
             setUser({ id: firebaseUser.uid, name: '', photos: [] });
           }

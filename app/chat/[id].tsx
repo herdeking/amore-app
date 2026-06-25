@@ -58,7 +58,7 @@ export default function ChatScreen() {
         const newest = msgs[msgs.length - 1];
         if (newest.senderId !== user?.id) {
           const senderName = otherUser?.name ?? 'New message';
-          sendLocalNotification(`${senderName} 💬`, newest.text, 'messages');
+          sendLocalNotification(`${senderName} 💬`, newest.text);
         }
       }
       setMessages(msgs as any);

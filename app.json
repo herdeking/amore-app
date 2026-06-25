@@ -27,6 +27,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-haptics",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Amore to access your microphone for voice messages."
+        }
+      ],
       "expo-web-browser",
       "@react-native-community/datetimepicker",
       [

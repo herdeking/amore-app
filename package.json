@@ -33,7 +33,6 @@
     "react-native-default-preference": "https://github.com/jitsi/react-native-default-preference.git#c9bf63bdc058e3fa2aa0b87b1ee1af240f44ed02",
     "react-native-gesture-handler": "~2.31.1",
     "react-native-google-mobile-ads": "^16.3.3",
-    "react-native-incall-manager": "^4.2.1",
     "react-native-orientation-locker": "https://github.com/jitsi/react-native-orientation-locker.git#fe095651d819cf134624f786b61fc8667862178a",
     "react-native-pager-view": "^8.0.1",
     "react-native-safe-area-context": "~5.7.0",

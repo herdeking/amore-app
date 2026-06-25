@@ -3,7 +3,6 @@ import { User } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { fetchProfiles, recordSwipe } from '../services/swipeService';
 import { sendLocalNotification } from '../services/notifications';
-import { incrementMatchCount, checkAndShowRatingPrompt } from '../services/ratingService';
 
 const DEMO_PROFILES: User[] = [
   { id: 'd1', name: 'Amara', age: 24, bio: 'Love hiking and cooking 🍳', photos: ['https://randomuser.me/api/portraits/women/1.jpg'], location: 'Lagos', interests: ['Hiking', 'Cooking'] },
@@ -57,8 +56,6 @@ export const useSwipe = () => {
       const matchedProfile = profiles.find(p => p.id === id);
       if (matchedProfile) {
         setMatchedUser(matchedProfile);
-        // Track match count for rating prompt
-        incrementMatchCount().then(() => checkAndShowRatingPrompt()).catch(() => {});
         setMatched(true);
         await sendLocalNotification(
           "It's a Match! 💕",
