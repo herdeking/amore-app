@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { setupNotificationChannel, sendLocalNotification } from '../services/notifications';
 import { useAuthStore } from '../store/authStore';
 import { db } from '../services/firebase';
 import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
@@ -11,12 +12,21 @@ export default function RootLayout() {
   const { user } = useAuthStore();
   const router = useRouter();
 
+  // Setup notification channels on mount
+  useEffect(() => {
+    setupNotificationChannel().catch(() => {});
+  }, []);
+
   // Listen for incoming calls
   useEffect(() => {
     if (!user?.id) return;
     const unsub = onSnapshot(doc(db, 'callInvites', user.id), (snap) => {
       if (!snap.exists()) return;
       const data = snap.data();
+      sendLocalNotification(
+        data.type === 'video' ? '📹 Incoming Video Call' : '📞 Incoming Voice Call',
+        `${data.callerName} is calling you...`
+      ).catch(() => {});
       Alert.alert(
         data.type === 'video' ? '📹 Incoming Video Call' : '📞 Incoming Voice Call',
         `${data.callerName} is calling you...`,

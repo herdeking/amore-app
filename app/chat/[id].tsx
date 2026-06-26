@@ -17,8 +17,6 @@ import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 
-const QUICK_REPLIES = ['Get to know each other?', 'Hello, my dear 👋', 'Is it convenient to talk?', 'You look amazing! 😍'];
-
 const DEMO_MESSAGES = [
   { id: '1', senderId: 'other', text: "I've been feeling lazy and sleepy lately 💤", createdAt: new Date().toISOString() },
   { id: '2', senderId: 'other', text: 'I just want to lie in bed for a while, want to lie here by my side?', createdAt: new Date().toISOString() },
@@ -97,7 +95,7 @@ export default function ChatScreen() {
 
   const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? 'Loading...' : 'User')) : 'Sonia';
   const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
-  const matchPhoto = otherUser?.photos?.[0] ?? 'https://randomuser.me/api/portraits/women/1.jpg';
+  const matchPhoto = otherUser?.photos?.[0] ?? null;
   const [isOnline, setIsOnline] = React.useState(otherUser?.isOnline ?? false);
   const [lastSeen, setLastSeen] = React.useState<string | null>(otherUser?.lastSeen ?? null);
 
@@ -154,22 +152,6 @@ export default function ChatScreen() {
     setText('');
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
-
-  const sendQuick = (reply: string) => {
-    if (isRealMatch && user?.id && id) {
-      sendMessage(id, user.id, reply).catch(() => {});
-    } else {
-      const msg = {
-        id: Date.now().toString(),
-        senderId: user?.id ?? 'me',
-        text: reply,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, msg]);
-    }
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-  };
-
 
   const handleSendGift = async (giftId: string) => {
     setShowGifts(false);
@@ -435,20 +417,6 @@ export default function ChatScreen() {
             </View>
           </View>
         )}
-
-        {/* Quick replies */}
-        <FlatList
-          horizontal
-          data={QUICK_REPLIES}
-          keyExtractor={r => r}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickReplies}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.quickReply} onPress={() => sendQuick(item)}>
-              <Text style={styles.quickReplyText}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
 
         {/* Input */}
         <View style={styles.inputRow}>

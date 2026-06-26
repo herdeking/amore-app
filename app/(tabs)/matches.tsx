@@ -56,7 +56,6 @@ export default function MatchesScreen() {
       const q = query(
         collection(db, 'callHistory'),
         where('participants', 'array-contains', user.id),
-        orderBy('startedAt', 'desc'),
         limit(30)
       );
       const snap = await getDocs(q);
@@ -73,6 +72,7 @@ export default function MatchesScreen() {
           time: data.startedAt ? new Date(data.startedAt).toLocaleString() : '',
         };
       });
+      calls.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       setCallHistory(calls);
     } catch (e) {
       console.log('loadCallHistory error:', e);

@@ -38,3 +38,28 @@ export const sendLocalNotification = async (title: string, body: string) => {
     trigger: null,
   });
 };
+
+export const setupNotificationChannel = async () => {
+  try {
+    if (require('react-native').Platform.OS !== 'android') return;
+    const { default: Notifs } = await import('expo-notifications');
+    await Notifs.setNotificationChannelAsync('messages', {
+      name: 'Messages',
+      importance: Notifs.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF4B6E',
+      sound: 'default',
+      showBadge: true,
+    });
+    await Notifs.setNotificationChannelAsync('calls', {
+      name: 'Calls',
+      importance: Notifs.AndroidImportance.MAX,
+      vibrationPattern: [0, 500, 200, 500],
+      lightColor: '#FF4B6E',
+      sound: 'default',
+      showBadge: true,
+    });
+  } catch (e) {
+    console.log('Channel setup error:', e);
+  }
+};
