@@ -6,7 +6,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
-import { getAIReply, getIcebreakers } from '../../services/aiReply';
 import { sendGift, GIFTS } from '../../services/gifts';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -38,7 +37,7 @@ export default function ChatScreen() {
   const [otherUser, setOtherUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const [showChatProfile, setShowChatProfile] = useState(false);
-  const isRealMatch = typeof id === 'string' && !/^d\d+$/.test(id) && id.length >= 15;
+  const isRealMatch = typeof id === 'string' && !/^d\d+$/.test(id) && id.length >= 10;
 
   useEffect(() => {
     if (!isRealMatch || !user?.id || !id) return;
@@ -171,28 +170,6 @@ export default function ChatScreen() {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
-  const handleTranslate = async (msgId: string, text: string) => {
-    if (translatedMsgs[msgId]) {
-      setTranslatedMsgs(prev => { const n = {...prev}; delete n[msgId]; return n; });
-      return;
-    }
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{ role: 'user', content: 'Translate this to English. Reply with ONLY the translation, nothing else: ' + text }],
-        }),
-      });
-      const data = await response.json();
-      const translation = data.content?.[0]?.text ?? text;
-      setTranslatedMsgs(prev => ({ ...prev, [msgId]: translation }));
-    } catch (e) {
-      Alert.alert('Translation failed', 'Could not translate message.');
-    }
-  };
 
   const handleSendGift = async (giftId: string) => {
     setShowGifts(false);
