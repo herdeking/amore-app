@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { uploadToImgbb } from './imgbb';
 
 const CLOUD_NAME = 'danwexfev';
-const UPLOAD_PRESET = 'ml_default';
+const UPLOAD_PRESET = 'amore_simple';
 
 const isVideoUri = (uri: string): boolean => {
   const lower = uri.toLowerCase();
