@@ -476,7 +476,7 @@ export default function ChatScreen() {
             <Text>🎁</Text>
           </TouchableOpacity>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { minHeight: 42, maxHeight: 120 }]}
             value={text}
             onChangeText={handleTextChange}
             placeholder="Send a message"
@@ -512,10 +512,10 @@ export default function ChatScreen() {
             <Text>📷</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.sendBtn, text.trim() && styles.sendBtnActive]}
+            style={styles.sendBtn}
             onPress={send}
           >
-            <Text style={styles.sendIcon}>➤</Text>
+            <Text style={{ color: '#fff', fontSize: 18 }}>➤</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -620,10 +620,10 @@ const styles = StyleSheet.create({
   reactionOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 999 },
   reactionPicker: { flexDirection: 'row' as const, backgroundColor: '#fff', borderRadius: 30, padding: 10, gap: 8, elevation: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8 },
   reactionEmoji: { fontSize: 28 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
-  inputIcon: { padding: 4 },
-  input: { flex: 1, backgroundColor: '#F0F0F0', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: Colors.text, maxHeight: 100, minHeight: 44 },
-  sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: '#F0F0F0', gap: 6 },
+  inputIcon: { padding: 6, marginBottom: 4 },
+  input: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 21, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: Colors.text },
+  sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   sendBtnActive: { backgroundColor: Colors.primary },
   sendIcon: { color: Colors.white, fontSize: 16 },
 });
