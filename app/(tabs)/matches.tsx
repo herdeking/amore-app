@@ -213,7 +213,16 @@ export default function MatchesScreen() {
               </View>
               <TouchableOpacity
                 style={[styles.friendBtn, { backgroundColor: Colors.primary }]}
-                onPress={() => router.push(`/chat/${item.id}`)}
+                onPress={async () => {
+                  if (!user?.id) return;
+                  try {
+                    const { getOrCreateMatch } = await import('../../services/swipeService');
+                    const matchId = await getOrCreateMatch(user.id, item.id);
+                    router.push(`/chat/${matchId}`);
+                  } catch {
+                    router.push(`/chat/${item.id}`);
+                  }
+                }}
               >
                 <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>Message</Text>
               </TouchableOpacity>
