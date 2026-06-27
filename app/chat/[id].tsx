@@ -183,8 +183,8 @@ export default function ChatScreen() {
   const handleCall = (type: 'voice' | 'video') => {
     const channelName = `call_${id}_${Date.now()}`;
     // Save call invite to Firestore so other user gets notified
-    import('firebase/firestore').then(({ doc, setDoc }) => {
-      setDoc(doc(db, 'callInvites', otherUser?.id ?? ''), {
+    import('firebase/firestore').then(async ({ doc, setDoc, getDoc }) => {
+      await setDoc(doc(db, 'callInvites', otherUser?.id ?? ''), {
         callerId: user?.id,
         callerName: user?.name,
         receiverId: otherUser?.id,
@@ -194,6 +194,34 @@ export default function ChatScreen() {
         matchId: id,
         createdAt: new Date().toISOString(),
       }).catch(() => {});
+
+      // Send push notification to receiver via Expo Push API
+      try {
+        const receiverSnap = await getDoc(doc(db, 'users', otherUser?.id ?? ''));
+        const pushToken = receiverSnap.data()?.pushToken;
+        if (pushToken && pushToken.startsWith('ExponentPushToken')) {
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: pushToken,
+              title: type === 'video' ? '📹 Incoming Video Call' : '📞 Incoming Voice Call',
+              body: `${user?.name} is calling you...`,
+              sound: 'default',
+              priority: 'high',
+              channelId: 'calls',
+              data: {
+                type: 'call',
+                callType: type,
+                callerId: user?.id,
+                callerName: user?.name,
+                matchId: id,
+                channelName,
+              },
+            }),
+          }).catch(() => {});
+        }
+      } catch {}
     });
     router.push({
       pathname: `/call/${id}`,

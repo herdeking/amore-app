@@ -63,3 +63,22 @@ export const setupNotificationChannel = async () => {
     console.log('Channel setup error:', e);
   }
 };
+
+export const sendExpoPush = async (pushToken: string, title: string, body: string, data?: Record<string, any>) => {
+  if (!pushToken || !pushToken.startsWith('ExponentPushToken')) return;
+  try {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: pushToken,
+        title,
+        body,
+        sound: 'default',
+        priority: 'high',
+        channelId: data?.channelId ?? 'messages',
+        data: data ?? {},
+      }),
+    });
+  } catch {}
+};

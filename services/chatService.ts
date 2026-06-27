@@ -1,3 +1,4 @@
+import { sendExpoPush } from './notifications';
 import { db } from './firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
@@ -25,6 +26,21 @@ export const subscribeToMessages = (
 };
 
 export const sendMessage = async (matchId: string, senderId: string, text: string) => {
+  // Get other user's push token
+  try {
+    const { getDoc, doc: fsDoc } = await import('firebase/firestore');
+    const { db: fdb } = await import('./firebase');
+    const matchSnap = await getDoc(fsDoc(fdb, 'matches', matchId));
+    const users = matchSnap.data()?.users ?? [];
+    const otherId = users.find((u: string) => u !== senderId);
+    if (otherId) {
+      const userSnap = await getDoc(fsDoc(fdb, 'users', otherId));
+      const pushToken = userSnap.data()?.pushToken;
+      const senderSnap = await getDoc(fsDoc(fdb, 'users', senderId));
+      const senderName = senderSnap.data()?.name ?? 'Someone';
+      if (pushToken) sendExpoPush(pushToken, `${senderName} 💬`, text, { channelId: 'messages', matchId });
+    }
+  } catch {}
   await addDoc(collection(db, 'matches', matchId, 'messages'), {
     text,
     senderId,
