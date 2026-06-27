@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { setupNotificationChannel, sendLocalNotification } from '../services/notifications';
+import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../store/authStore';
 import { db } from '../services/firebase';
 import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
@@ -15,6 +16,26 @@ export default function RootLayout() {
   // Setup notification channels on mount
   useEffect(() => {
     setupNotificationChannel().catch(() => {});
+  }, []);
+
+  // Handle notification tap (when app is backgrounded)
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.type === 'call' && data?.matchId) {
+        router.push({
+          pathname: `/call/${data.matchId}`,
+          params: {
+            type: data.callType ?? 'voice',
+            callerId: data.callerId,
+            callerName: data.callerName,
+            channelName: data.channelName,
+            isAnswering: 'true',
+          }
+        } as any);
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   // Listen for incoming calls
