@@ -14,21 +14,36 @@ export default function RootLayout() {
   const { user } = useAuthStore();
   const router = useRouter();
 
-  // Setup notification channels on mount
+  // Setup notification channels and OneSignal on mount
   useEffect(() => {
     setupNotificationChannel().catch(() => {});
     // Initialize OneSignal
     OneSignal.initialize('d4895865-ee18-4353-9acc-015c888135cd');
     OneSignal.Notifications.requestPermission(true);
-    // Save OneSignal Player ID to Firestore
-    OneSignal.User.getOnesignalId().then(async (playerId) => {
+
+    // Listen for OneSignal subscription change to get player ID
+    OneSignal.User.pushSubscription.addEventListener('change', async (change: any) => {
+      const playerId = change.current?.id;
       if (playerId && user?.id) {
-        const { doc, updateDoc } = await import('firebase/firestore');
-        const { db } = await import('../services/firebase');
-        updateDoc(doc(db, 'users', user.id), { osPlayerId: playerId }).catch(() => {});
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('../services/firebase');
+          await updateDoc(doc(db, 'users', user.id), { osPlayerId: playerId });
+        } catch(e) {}
       }
-    }).catch(() => {});
-  }, []);
+    });
+    // Also try to get current subscription ID immediately
+    (async () => {
+      try {
+        const subId = (OneSignal.User.pushSubscription as any).token ?? (OneSignal.User.pushSubscription as any).optedIn;
+        if (user?.id) {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('../services/firebase');
+          if (subId) updateDoc(doc(db, 'users', user.id), { osPlayerId: subId }).catch(() => {});
+        }
+      } catch {}
+    })();
+  }, [user?.id]);
 
   // Handle notification tap (when app is backgrounded)
   useEffect(() => {
