@@ -12,6 +12,7 @@ import { db } from '../../services/firebase';
 import { collection, query, where, getDocs, writeBatch, doc as fsDoc, setDoc, serverTimestamp, onSnapshot as fsOnSnapshot } from 'firebase/firestore';
 import { recordProfileView } from '../../services/profileViews';
 import { sendLocalNotification } from '../../services/notifications';
+import { OneSignal } from 'react-native-onesignal';
 import { subscribeToMessages, sendMessage, getOtherUserInMatch, ChatMessage } from '../../services/chatService';
 import { useEffect } from 'react';
 import { Colors } from '../../constants/colors';
@@ -220,6 +221,29 @@ export default function ChatScreen() {
               },
             }),
           }).catch(() => {});
+        }
+      } catch {}
+
+      // Also notify via OneSignal for better background delivery
+      try {
+        const receiverSnap2 = await getDoc(doc(db, 'users', otherUser?.id ?? ''));
+        const osPlayerId = receiverSnap2.data()?.osPlayerId;
+        if (osPlayerId) {
+          await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic os_v2_app_2sevqzpodbbvhgwmafoirajvzwqwgrnp62ueabesc3aqfu2uus6idqps3d7wyvkrjoqzxqkddvjefeo2et3x5lgoaohmtu2dll73i4q',
+            },
+            body: JSON.stringify({
+              app_id: 'd4895865-ee18-4353-9acc-015c888135cd',
+              include_player_ids: [osPlayerId],
+              headings: { en: type === 'video' ? '📹 Incoming Video Call' : '📞 Incoming Voice Call' },
+              contents: { en: `${user?.name} is calling you...` },
+              priority: 10,
+              data: { type: 'call', callType: type, callerId: user?.id, callerName: user?.name, matchId: id, channelName },
+            }),
+          });
         }
       } catch {}
     });

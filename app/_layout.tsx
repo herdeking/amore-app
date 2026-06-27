@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { setupNotificationChannel, sendLocalNotification } from '../services/notifications';
 import * as Notifications from 'expo-notifications';
+import { OneSignal } from 'react-native-onesignal';
 import { useAuthStore } from '../store/authStore';
 import { db } from '../services/firebase';
 import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
@@ -16,6 +17,17 @@ export default function RootLayout() {
   // Setup notification channels on mount
   useEffect(() => {
     setupNotificationChannel().catch(() => {});
+    // Initialize OneSignal
+    OneSignal.initialize('d4895865-ee18-4353-9acc-015c888135cd');
+    OneSignal.Notifications.requestPermission(true);
+    // Save OneSignal Player ID to Firestore
+    OneSignal.User.getOnesignalId().then(async (playerId) => {
+      if (playerId && user?.id) {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../services/firebase');
+        updateDoc(doc(db, 'users', user.id), { osPlayerId: playerId }).catch(() => {});
+      }
+    }).catch(() => {});
   }, []);
 
   // Handle notification tap (when app is backgrounded)
