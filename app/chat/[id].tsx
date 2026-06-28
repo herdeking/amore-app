@@ -94,7 +94,7 @@ export default function ChatScreen() {
     markRead();
   }, [id, user?.id, isRealMatch]);
 
-  const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? 'Loading...' : 'User')) : 'Sonia';
+  const matchName = isRealMatch ? (otherUser?.name ?? (loadingUser ? '...' : otherUser?.name ?? 'User')) : 'Sonia';
   const matchProfile = otherUser ?? { name: matchName, age: 25, bio: 'Artist & dreamer', interests: ['Art', 'Music'], location: 'Abuja' };
   const matchPhoto = otherUser?.photos?.[0] ?? null;
   const [isOnline, setIsOnline] = React.useState(otherUser?.isOnline ?? false);

@@ -87,6 +87,18 @@ export default function Onboarding() {
       }, { merge: true });
 
       router.replace('/(tabs)/swipe');
+        // Show notification setup tip for MIUI/Xiaomi users
+        setTimeout(() => {
+          const { Alert, Linking } = require('react-native');
+          Alert.alert(
+            'Enable Notifications 🔔',
+            'To receive messages and call alerts, please:\n\n1. Go to Settings → Apps → Amore\n2. Set Battery to "No restrictions"\n3. Enable Autostart\n\nThis ensures you never miss a match!',
+            [
+              { text: 'Got it!', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        }, 1000);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {

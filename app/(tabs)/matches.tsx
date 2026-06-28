@@ -122,6 +122,9 @@ export default function MatchesScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Messages 💕</Text>
+        <TouchableOpacity onPress={() => router.push('/search' as any)} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 22 }}>🔍</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.filterBtn}>
           <Text style={styles.filterIcon}>⚡</Text>
         </TouchableOpacity>
