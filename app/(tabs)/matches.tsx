@@ -12,7 +12,7 @@ import { useAuthStore } from '../../store/authStore';
 import { fetchMatches, MatchWithUser } from '../../services/matchesService';
 import { getMyFriends } from '../../services/followService';
 import { db } from '../../services/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import Stories from '../../components/stories/Stories';
 
 export default function MatchesScreen() {
@@ -42,6 +42,20 @@ export default function MatchesScreen() {
     const m = await fetchMatches(user.id);
     setRealMatches(m);
     setLoading(false);
+  }, [user?.id]);
+
+  // Real-time listener for new messages
+  useEffect(() => {
+    if (!user?.id) return;
+    const q = query(
+      collection(db, 'matches'),
+      where('users', 'array-contains', user.id)
+    );
+    const unsub = onSnapshot(q, async () => {
+      const m = await fetchMatches(user.id);
+      setRealMatches(m);
+    });
+    return () => unsub();
   }, [user?.id]);
 
   const loadFriends = useCallback(async () => {

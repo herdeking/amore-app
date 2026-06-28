@@ -82,3 +82,32 @@ export const sendExpoPush = async (pushToken: string, title: string, body: strin
     });
   } catch {}
 };
+
+export const sendOneSignalPush = async (
+  osPlayerId: string,
+  title: string,
+  body: string,
+  data?: Record<string, any>
+) => {
+  if (!osPlayerId) return;
+  try {
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic os_v2_app_2sevqzpodbbvhgwmafoirajvzwqwgrnp62ueabesc3aqfu2uus6idqps3d7wyvkrjoqzxqkddvjefeo2et3x5lgoaohmtu2dll73i4q',
+      },
+      body: JSON.stringify({
+        app_id: 'd4895865-ee18-4353-9acc-015c888135cd',
+        include_player_ids: [osPlayerId],
+        headings: { en: title },
+        contents: { en: body },
+        priority: 10,
+        data: data ?? {},
+        android_channel_id: data?.channelId === 'calls' ? 'calls' : 'messages',
+      }),
+    });
+  } catch (e) {
+    console.log('OneSignal push failed:', e);
+  }
+};

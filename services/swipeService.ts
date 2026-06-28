@@ -1,4 +1,4 @@
-import { sendExpoPush } from './notifications';
+import { sendExpoPush, sendOneSignalPush } from './notifications';
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, getDoc, doc } from 'firebase/firestore';
 import { createNotification } from './notificationActivity';

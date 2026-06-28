@@ -1,4 +1,4 @@
-import { sendExpoPush } from './notifications';
+import { sendExpoPush, sendOneSignalPush } from './notifications';
 import { db } from './firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
@@ -39,6 +39,9 @@ export const sendMessage = async (matchId: string, senderId: string, text: strin
       const senderSnap = await getDoc(fsDoc(fdb, 'users', senderId));
       const senderName = senderSnap.data()?.name ?? 'Someone';
       if (pushToken) sendExpoPush(pushToken, `${senderName} 💬`, text, { channelId: 'messages', matchId });
+      // OneSignal backup
+      const osPlayerId = userSnap.data()?.osPlayerId;
+      if (osPlayerId) sendOneSignalPush(osPlayerId, `${senderName} 💬`, text, { channelId: 'messages', matchId });
     }
   } catch {}
   await addDoc(collection(db, 'matches', matchId, 'messages'), {
