@@ -21,34 +21,50 @@ export default function RootLayout() {
     OneSignal.Notifications.requestPermission(true);
   }, []);
 
-  // Save OneSignal player ID when user is logged in
+  // Link OneSignal to Firebase user
   useEffect(() => {
     if (!user?.id) return;
-    const saveOsId = async () => {
+    try {
+      // Login to OneSignal with Firebase user ID
+      OneSignal.login(user.id);
+      console.log('✅ OneSignal logged in with user:', user.id);
+    } catch(e) { console.log('OneSignal login error:', e); }
+
+    // Save player ID with multiple retries
+    const tryGetOsId = async (attempt: number = 1) => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const subId = (OneSignal.User.pushSubscription as any).id
-          ?? (OneSignal.User.pushSubscription as any).token
-          ?? (OneSignal.User.pushSubscription as any).optedIn;
-        if (subId && typeof subId === 'string') {
+        const sub = OneSignal.User.pushSubscription as any;
+        const subId = sub.id ?? sub.token ?? sub.optedInId;
+        
+        if (subId && typeof subId === 'string' && subId.length > 5) {
           const { doc, updateDoc } = await import('firebase/firestore');
           const { db } = await import('../services/firebase');
-          await updateDoc(doc(db, 'users', user.id), { osPlayerId: subId });
-          console.log('✅ OneSignal ID saved:', subId);
+          await updateDoc(doc(db, 'users', user.id), { 
+            osPlayerId: subId,
+            pushToken: subId 
+          });
+          console.log(`✅ OneSignal ID saved (attempt ${attempt}):`, subId);
+        } else if (attempt < 5) {
+          setTimeout(() => tryGetOsId(attempt + 1), attempt * 2000);
         }
-      } catch(e) { console.log('OneSignal save error:', e); }
+      } catch(e) { 
+        if (attempt < 5) setTimeout(() => tryGetOsId(attempt + 1), attempt * 2000);
+      }
     };
-    saveOsId();
+    tryGetOsId();
 
-    // Also listen for subscription changes
+    // Listen for subscription changes
     OneSignal.User.pushSubscription.addEventListener('change', async (change: any) => {
       const playerId = change.current?.id ?? change.current?.token;
-      if (playerId && typeof playerId === 'string') {
+      if (playerId && typeof playerId === 'string' && playerId.length > 5) {
         try {
           const { doc, updateDoc } = await import('firebase/firestore');
           const { db } = await import('../services/firebase');
-          await updateDoc(doc(db, 'users', user.id), { osPlayerId: playerId });
-          console.log('✅ OneSignal ID updated:', playerId);
+          await updateDoc(doc(db, 'users', user.id), { 
+            osPlayerId: playerId,
+            pushToken: playerId
+          });
+          console.log('✅ OneSignal subscription updated:', playerId);
         } catch(e) {}
       }
     });
