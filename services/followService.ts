@@ -1,5 +1,6 @@
 // services/followService.ts
 import { db } from './firebase';
+import { sendExpoPush, sendOneSignalPush } from './notifications';
 import {
   doc, setDoc, deleteDoc, getDoc, getDocs,
   collection, query, where, updateDoc, increment
@@ -28,6 +29,16 @@ export const followUser = async (followerId: string, followerName: string, follo
     read: false,
     createdAt: new Date().toISOString(),
   });
+
+  // Send push notification
+  try {
+    const followedSnap = await getDoc(doc(db, 'users', followedId));
+    const followed = followedSnap.data();
+    const title = 'New Follower 👥';
+    const body = `${followerName} started following you!`;
+    if (followed?.pushToken) sendExpoPush(followed.pushToken, title, body, { channelId: 'messages', type: 'follow' });
+    if (followed?.osPlayerId) sendOneSignalPush(followed.osPlayerId, title, body, { channelId: 'messages', type: 'follow' });
+  } catch {}
 };
 
 export const unfollowUser = async (followerId: string, followedId: string) => {

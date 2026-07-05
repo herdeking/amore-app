@@ -91,11 +91,10 @@ export const sendOneSignalPush = async (
 ) => {
   if (!osPlayerId) return;
   try {
-    await fetch('https://onesignal.com/api/v1/notifications', {
+    await fetch('https://amore-push-proxy.herdeking.workers.dev/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Basic os_v2_app_2sevqzpodbbvhgwmafoirajvzwqwgrnp62ueabesc3aqfu2uus6idqps3d7wyvkrjoqzxqkddvjefeo2et3x5lgoaohmtu2dll73i4q',
       },
       body: JSON.stringify({
         app_id: 'd4895865-ee18-4353-9acc-015c888135cd',

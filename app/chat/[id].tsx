@@ -229,7 +229,7 @@ export default function ChatScreen() {
         const receiverSnap2 = await getDoc(doc(db, 'users', otherUser?.id ?? ''));
         const osPlayerId = receiverSnap2.data()?.osPlayerId;
         if (osPlayerId) {
-          await fetch('https://onesignal.com/api/v1/notifications', {
+          await fetch('https://amore-push-proxy.herdeking.workers.dev/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
