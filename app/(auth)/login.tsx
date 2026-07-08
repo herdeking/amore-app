@@ -4,7 +4,7 @@ import {
   TextInput, Alert, Dimensions, Image, ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously} from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 
 const { width, height } = Dimensions.get('window');
@@ -52,6 +52,19 @@ export default function Login() {
       Alert.alert('Error', e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Enter your email', 'Please enter your email address first, then tap "Forgot Password" again.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert('Email Sent ✅', `A password reset link has been sent to ${email}. Please check your inbox.`);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
     }
   };
 
@@ -113,6 +126,11 @@ export default function Login() {
             {mode === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
           </Text>
         </TouchableOpacity>
+        {mode === 'login' && (
+          <TouchableOpacity onPress={handleForgotPassword}>
+            <Text style={[styles.switchText, { marginTop: 10, fontSize: 14 }]}>Forgot Password?</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
