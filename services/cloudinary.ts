@@ -16,26 +16,24 @@ export const uploadToCloudinary = async (uri: string): Promise<string> => {
   const resourceType = isVideo ? 'video' : 'image';
 
   try {
-    // Convert local file URI into a real Blob first — required under React Native's
-    // New Architecture, which does not support the legacy { uri, type, name } FormData shape.
-    const fileResponse = await fetch(uri);
-    const fileBlob = await fileResponse.blob();
-
-    const formData = new FormData();
-    formData.append('file', fileBlob, `upload_${Date.now()}.${isVideo ? 'mp4' : 'jpg'}`);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('resource_type', resourceType);
-
-    const response = await fetch(
+    // Use FileSystem.uploadAsync for native-backed multipart upload — avoids the
+    // FormData/Blob incompatibilities present under React Native's New Architecture.
+    const uploadResult = await FileSystem.uploadAsync(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+      uri,
       {
-        method: 'POST',
-        body: formData,
-        headers: { 'Accept': 'application/json' },
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: isVideo ? 'video/mp4' : 'image/jpeg',
+        parameters: {
+          upload_preset: UPLOAD_PRESET,
+          resource_type: resourceType,
+        },
       }
     );
 
-    const data = await response.json();
+    const data = JSON.parse(uploadResult.body);
     if (data.error) throw new Error(JSON.stringify(data.error));
     if (!data.secure_url) throw new Error('No URL returned from Cloudinary');
     return data.secure_url;
