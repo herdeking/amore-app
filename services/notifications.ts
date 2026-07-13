@@ -103,7 +103,7 @@ export const sendOneSignalPush = async (
         contents: { en: body },
         priority: 10,
         data: data ?? {},
-        android_channel_id: data?.channelId === 'calls' ? 'calls' : 'messages',
+        android_channel_id: data?.channelId === 'calls' ? '87f87693-eb72-4e51-93f3-6c690322820b' : '0c7db20d-72f5-437c-826a-089583de2753',
       }),
     });
   } catch (e) {

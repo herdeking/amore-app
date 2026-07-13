@@ -233,7 +233,6 @@ export default function ChatScreen() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Basic ${process.env.EXPO_PUBLIC_ONESIGNAL_KEY}`,
             },
             body: JSON.stringify({
               app_id: 'd4895865-ee18-4353-9acc-015c888135cd',
@@ -241,6 +240,7 @@ export default function ChatScreen() {
               headings: { en: type === 'video' ? '📹 Incoming Video Call' : '📞 Incoming Voice Call' },
               contents: { en: `${user?.name} is calling you...` },
               priority: 10,
+              android_channel_id: '87f87693-eb72-4e51-93f3-6c690322820b',
               data: { type: 'call', callType: type, callerId: user?.id, callerName: user?.name, matchId: id, channelName },
             }),
           });
