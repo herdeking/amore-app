@@ -16,13 +16,13 @@ export const uploadToCloudinary = async (uri: string): Promise<string> => {
   const resourceType = isVideo ? 'video' : 'image';
 
   try {
-    // Use multipart form upload - avoids base64 slash issues
+    // Convert local file URI into a real Blob first — required under React Native's
+    // New Architecture, which does not support the legacy { uri, type, name } FormData shape.
+    const fileResponse = await fetch(uri);
+    const fileBlob = await fileResponse.blob();
+
     const formData = new FormData();
-    formData.append('file', {
-      uri,
-      type: isVideo ? 'video/mp4' : 'image/jpeg',
-      name: `upload_${Date.now()}.${isVideo ? 'mp4' : 'jpg'}`,
-    } as any);
+    formData.append('file', fileBlob, `upload_${Date.now()}.${isVideo ? 'mp4' : 'jpg'}`);
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('resource_type', resourceType);
 
